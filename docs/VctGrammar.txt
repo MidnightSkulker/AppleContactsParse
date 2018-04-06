@@ -1,0 +1,6 @@
+VCF -> [VCard]
+VCard -> <BEGIN> <VCard>
+      	 [Item]
+      	 <END> <VCard>
+Item ->	<Label>:<Name>
+
