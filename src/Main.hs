@@ -39,70 +39,127 @@ ADR;type=HOME;type=pref:;;4193 NW Scottsdale Dr;Beaverton;OR;97006;USA
  of two types, some have a name: 'type = HOME', while some are just a
  component without a name, such as '4193 NW Scottsdale Dr'.
 
+ And here is another monkey wrench:
+X-ABUID:67347CA9-0ECA-4C99-8D69-7E9EBFE3C209:ABPerson
+
+ It has a name "X-ABUID", with two valuish things separated by colons.
+
 Don't know why the geniuses at Apple did this.
 If some of the code here gets ugly, my excuse is that the input is ugly.
 
 -}
 
-{- A CSV file contains 0 or more lines, each of which is terminated
-   by the end-of-line character (eol). -}
-csvFile :: GenParser Char st [[String]]
-csvFile = 
-    do result <- many line
-       eof
-       return result
+data Separator = Colon | Semicolon | End deriving (Show)
+toSeparator :: Char -> Separator
+toSeparator ':' = Colon
+toSeparator ';' = Semicolon
+toSeparator '\n' = End
 
--- Each line contains 1 or more cells, separated by a comma
-line :: GenParser Char st [String]
-line = 
-    do result <- cells
-       eol                       -- end of line
-       return result
-       
--- Build up a list of cells.  Try to parse the first cell, then figure out 
--- what ends the cell.
-cells :: GenParser Char st [String]
-cells = do first <- cellContent
-           next <- remainingCells
-           return (first : next)
+itemSeparator :: GenParser Char st Separator
+itemSeparator = oneOf(":;\n") >>= return . toSeparator
 
--- The cell either ends with a comma, indicating that 1 or more cells follow,
--- or it doesn't, indicating that we're at the end of the cells for this line
-remainingCells :: GenParser Char st [String]
-remainingCells =
-    (char ',' >> cells)            -- Found comma?  More cells coming
-    <|> (return [])                -- No comma?  Return [], no more cells
+data Attribute = ComplexAttribute { name :: String, value :: String }
+               | SimpleAttribute { name :: String } deriving (Show)
+complexAttribute :: GenParser Char st Attribute
+complexAttribute = do { n <- attributeName
+               ; _ <- char '='
+               ; v <- attributeValue
+               ; return ComplexAttribute { name = n, value = v } }
+simpleAttribute :: GenParser Char st Attribute
+simpleAttribute = do { n <- attributeValue
+                     ; return SimpleAttribute { name = n } }
+attributeName :: GenParser Char st String
+attributeName = many1 (noneOf "=:;\n")
+attributeValue :: GenParser Char st String
+attributeValue = many1 (noneOf "=:;\n")
 
--- Each cell contains 0 or more characters, which must not be a comma or EOL
-cellContent :: GenParser Char st String
-cellContent = many (noneOf ",\n")
+attribute :: GenParser Char st Attribute
+attribute = try complexAttribute <|> simpleAttribute
 
+data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show)
+field :: GenParser Char st Field
+field = do { a <- attribute
+           ; _ <- char ':'
+           ; as <- sepBy1 attribute (oneOf ":;")
+           ; _ <- eol
+           ; return Field { pangalan = name a, attributes = as } }
+
+data Item = Item { text :: String
+                 , separator :: Separator } deriving (Show)
+type Component = [Item]
+componentSeparator :: GenParser Char st Char
+componentSeparator = oneOf ":;\n"
+
+whiteSpace :: GenParser Char st String
+whiteSpace = many (oneOf " \t\n")
+blank :: GenParser Char st Char
+blank = char ' '
 -- The end of line character is \n
 eol :: GenParser Char st Char
 eol = char '\n'
 
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV input = parse csvFile "(unknown)" input
+-- A single item (text followed by separator) of a component
+-- Notice at this point no distinction is made between a 'name' and a 'value'
+-- The input syntax of VCF is too broken to make that conclusion at this time.
+item :: GenParser Char st Item
+item = do { v <- many (noneOf ":;\n")
+          ; s <- oneOf ":;\n"
+          ; return Item { text = v, separator = toSeparator s } }
 
---------------------------------------------------------------------------------
-type Component = String
 -- A component is a string of characters other than ':' or ';'
 component :: GenParser Char st Component
-component = many (noneOf ":;\n")
+component = many item
 
 -- A list of components, separated by ':' or ';'
 components :: GenParser Char st [Component]
 components = sepBy component (oneOf ";:")
 
 -- A field is a list of components followed by an end of line
-field :: GenParser Char st [Component] -- Boo hoo, not a one liner :(
-field = do { cs <- components
-           ; char '\n'
-           ; return cs }
+-- field :: GenParser Char st [Component] -- Boo hoo, not a one liner :(
+-- field = (continuation >> return []) <|> initial
+--   where initial = do { cs <- components
+--                      ; char '\n'
+--                      ; return cs }
+
+-- Some fields (e.g. PHOTO), have continuation lines for lots of data.
+-- Apparently this are indicated by a leading blank
+-- These continuations always seem to alphanumeric strings
+-- TEMP: For now, ignoring the continuation data
+continuation :: GenParser Char st ()
+continuation = blank >> many alphaNum >> eol >> return ()
+
+-- Open and close of an entry
+openEntry, closeEntry :: GenParser Char st ()
+openEntry = string "BEGIN:VCARD\n" >> return ()
+closeEntry = string "END:VCARD" >> return ()
+
+data Entry = Entry deriving (Show)
+
+entry :: GenParser Char st Entry
+entry = do { openEntry
+           ; cs <- many field
+           ; closeEntry
+           ; return Entry
+           }
+
+type VCF = [Entry]
+
+vcfFile :: GenParser Char st VCF
+vcfFile = sepBy entry (char '\n')
 
 -- Run the address book parse on a test input
-test :: String -> Either ParseError [Component]
-test testCase = parse field "(unknown)" testCase
+test,t :: GenParser Char () a -> String -> Either ParseError a
+test p testCase = parse p "(unknown)" testCase
+t = test
+
+t1,t2,t3 :: Either ParseError Attribute
+t1 = test attribute "a=b"
+t2 = test attribute "ab"
+t3 = test attribute "=b"
+t4 :: Either ParseError Field
+t4 = test field "X-ABUID:4709EC50-7594-4F67-85E1-6870DA65FCBA:ABPerson\n"
+t5 = test field "ab:\n"
+t6 = test field "ab:c\n"
 
 printConfig = do
   contents <- readFile "stack.yaml"
@@ -110,4 +167,7 @@ printConfig = do
 
 main :: IO ()
 main = do
-  putStrLn "hello world"
+  arubala <- readFile "Arubala.test"
+  parseTest entry arubala
+
+m = main
