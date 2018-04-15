@@ -66,7 +66,8 @@ itemSeparator :: GenParser Char st Separator
 itemSeparator = oneOf(":;\n") >>= return . toSeparator
 
 data Attribute = ComplexAttribute { name :: String, value :: String }
-               | SimpleAttribute { name :: String } deriving (Show)
+               | SimpleAttribute { name :: String }
+               | NoAttribute deriving (Show)
 -- Constructor for a Simple Attribute
 mkSimpleAttribute :: String -> Attribute
 mkSimpleAttribute s = SimpleAttribute { name = s }
@@ -94,8 +95,23 @@ attribute = try complexAttribute <|> simpleAttribute
 
 data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show)
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
-lastAttribute :: Field -> Maybe Attribute
-lastAttribute f = if null (attributes f) then Nothing else Just (last (attributes f))
+lastAttribute :: Field -> Attribute
+lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
+firstAttributes :: Field -> [Attribute]
+firstAttributes f | noAttributes f = []
+firstAttributes f = init (attributes f)
+updateLastAttribute :: Field -> (Attribute -> Attribute) -> Field
+updateLastAttribute field update =
+  let l = lastAttribute field
+      rest = firstAttributes field
+  in field { attributes = rest ++ [update l] }
+extendLastAttribute :: [String] -> Attribute -> Attribute
+extendLastAttribute ss attr =
+  case attr of
+    NoAttribute -> ComplexAttribute { name = "Continuation", value = concat ss }
+    SimpleAttribute { name = n } -> ComplexAttribute { name = n, value = concat ss }
+    ComplexAttribute { name = n, value = v } -> ComplexAttribute { name = n, value = v ++ concat ss }
+
 -- Check if a field has no attributs
 noAttributes :: Field -> Bool
 noAttributes = null . attributes
@@ -120,7 +136,8 @@ field = do { s <- simpleField
            }
   where combineContinuationWithField :: [String] -> Field -> Field
         combineContinuationWithField [] f = f
-        combineContinuationWithField ss f = addSimpleAttribute f (concat ss)
+        combineContinuationWithField ss f | noAttributes f = addSimpleAttribute f (concat ss)
+        combineContinuationWithField ss f = updateLastAttribute f (extendLastAttribute ss)
 
 -- Some fields (e.g. PHOTO), have continuation lines for lots of data.
 -- Apparently this are indicated by a leading blank
@@ -172,6 +189,9 @@ t7 = test field "N:;;;;\n"
 t8 = test field "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n"
 t9 = test field ":kdkdk\n" -- Shoule fail (left "(unknown)")
 t10 = test field "ORG:Macys;\n"
+t21,t22 :: Either ParseError Field
+t21 = test field "ORG:Macys;\n -kdkdkdkd\n" -- Should fail because of '-' in the continuation
+t22 = test field "ORG:Macys;\n mcmcmcmc\n"
 
 printConfig = do
   contents <- readFile "stack.yaml"
