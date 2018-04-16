@@ -164,8 +164,7 @@ data Entry = Entry { fields :: [Field] } deriving (Show)
 
 entry :: GenParser Char st Entry
 entry = do { openEntry
-           ; fs <- many field
-           ; closeEntry
+           ; fs <- manyTill field (try closeEntry) -- !! Need to use manyTill field closeEntry
            ; return Entry { fields = fs }
            }
 
@@ -202,7 +201,7 @@ t30 :: Either ParseError Entry
 t30 = test entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
 t40,t41 :: Either ParseError VCF
 t40 = test vcfFile "ORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
-t41 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n\n"
+t41 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD"
 
 printConfig = do
   contents <- readFile "stack.yaml"
