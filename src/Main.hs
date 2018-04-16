@@ -6,6 +6,7 @@ import System.IO (readFile)
 import Text.ParserCombinators.Parsec
 import GHC.Generics
 import Data.Aeson
+import Data.ByteString.Lazy (unpack)
 
 {- A VCF file contains a list of entries, each entry has the following:
  Opener: BEGIN:VCARD
@@ -201,6 +202,14 @@ vcfFile = do { es <- sepBy entry (char '\n')
 test,t :: GenParser Char () a -> String -> Either ParseError a
 test p testCase = parse p "(unknown)" testCase
 t = test
+
+-- Convert a parser test into a parser and json test.
+jsonTest :: (ToJSON a) => GenParser Char () a -> String -> IO ()
+jsonTest p s = do { let ea = test p s
+                  ; case ea of
+                      Left e -> putStrLn (show e)
+                      Right a -> putStrLn (show (encode a))
+                  }
 
 -- Test attribute parser
 t1,t2,t3 :: Either ParseError Attribute
