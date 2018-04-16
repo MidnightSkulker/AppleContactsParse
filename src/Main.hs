@@ -160,13 +160,13 @@ openEntry, closeEntry :: GenParser Char st ()
 openEntry = string "BEGIN:VCARD\n" >> return ()
 closeEntry = string "END:VCARD" >> return ()
 
-data Entry = Entry deriving (Show)
+data Entry = Entry { fields :: [Field] } deriving (Show)
 
 entry :: GenParser Char st Entry
 entry = do { openEntry
-           ; cs <- many field
+           ; fs <- many field
            ; closeEntry
-           ; return Entry
+           ; return Entry { fields = fs }
            }
 
 type VCF = [Entry]
@@ -198,6 +198,11 @@ t21,t23 :: Either ParseError Field
 t21 = test field "ORG:Macys;\n -kdkdkdkd\n" -- Should fail because of '-' in the continuation
 t22 = test field "ORG:Macys--\n mcmcmcmc\n"
 t23 = test field "\n mcmcmcmc\n"
+t30 :: Either ParseError Entry
+t30 = test entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
+t40,t41 :: Either ParseError VCF
+t40 = test vcfFile "ORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
+t41 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n\n"
 
 printConfig = do
   contents <- readFile "stack.yaml"
