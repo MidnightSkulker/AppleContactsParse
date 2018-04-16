@@ -56,15 +56,18 @@ blank = char ' '
 eol :: GenParser Char st Char -- The end of line character is \n
 eol = char '\n'
 
+-- Convert character to appropriate item separator.
 data Separator = Colon | Semicolon | End deriving (Show)
 toSeparator :: Char -> Separator
 toSeparator ':' = Colon
 toSeparator ';' = Semicolon
 toSeparator '\n' = End
 
+-- Parse an item separator.
 itemSeparator :: GenParser Char st Separator
 itemSeparator = oneOf(":;\n") >>= return . toSeparator
 
+-- Attributes of an item.
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
                | NoAttribute deriving (Show)
@@ -72,49 +75,59 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
 mkSimpleAttribute :: String -> Attribute
 mkSimpleAttribute s = SimpleAttribute { name = s }
 
--- A complex attribute is of the form 'name = value'
+-- Parser for a complex attribute; it has the form 'name = value'
 complexAttribute :: GenParser Char st Attribute
 complexAttribute = do { n <- attributeName
                ; _ <- char '='
                ; v <- attributeValue
                ; return ComplexAttribute { name = n, value = v } }
--- A simple attribute has only a name, no value
+
+-- Parser for a simple attribute; it has only a name, no value
 simpleAttribute :: GenParser Char st Attribute
 simpleAttribute = do { n <- attributeValue
                      ; return SimpleAttribute { name = n } }
 -- An attribute name must be non-empty
 attributeName :: GenParser Char st String
 attributeName = many1 (noneOf "=:;\n")
--- An attribute value can be empty, as in this example: "N:;;;;;"
+
+-- An attribute value can be empty, as in this example: "N:;;;;;", thus
+-- we parse with 'many', not 'many1'.
 attributeValue :: GenParser Char st String
 attributeValue = many (noneOf "=:;\n")
 
--- Parse an attribute
+-- Parse an attribute.
 attribute :: GenParser Char st Attribute
 attribute = try complexAttribute <|> simpleAttribute
 
+-- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show)
+
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
 lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
+
 -- Get all but the last attribute of a field.
 firstAttributes :: Field -> [Attribute]
 firstAttributes f | noAttributes f = []
 firstAttributes f = init (attributes f)
+
 -- Update the last attribute of a field using an update function.
 updateLastAttribute :: Field -> (Attribute -> Attribute) -> Field
 updateLastAttribute field update =
   let l = lastAttribute field
       rest = firstAttributes field
   in field { attributes = rest ++ [update l] }
+
 -- To support continuation fields, extend the last attribute of a field
 -- with the continuation data.
 extendLastAttribute :: [String] -> Attribute -> Attribute
 extendLastAttribute ss attr =
   case attr of
     NoAttribute -> ComplexAttribute { name = "Continuation", value = concat ss }
-    SimpleAttribute { name = n } -> ComplexAttribute { name = "Continuation", value = n ++ concat ss }
-    ComplexAttribute { name = n, value = v } -> ComplexAttribute { name = n, value = v ++ concat ss }
+    SimpleAttribute { name = n } ->
+      ComplexAttribute { name = "Continuation", value = n ++ concat ss }
+    ComplexAttribute { name = n, value = v } ->
+      ComplexAttribute { name = n, value = v ++ concat ss }
 
 -- Check if a field has no attributes.
 noAttributes :: Field -> Bool
@@ -124,21 +137,22 @@ noAttributes = null . attributes
 addSimpleAttribute :: Field -> String -> Field
 addSimpleAttribute f s = f { attributes = attributes f ++ [mkSimpleAttribute s] }
 
--- Parse a simple Field
+-- Parse a simple Field. A field is <usually> on one line.
 simpleField :: GenParser Char st Field
 simpleField = do { a <- attributeName
-           ; _ <- char ':'
-           ; as <- sepBy1 attribute (oneOf ":;")
-           ; _ <- eol
-           ; return Field { pangalan = a, attributes = as } }
+                 ; _ <- oneOf ":;"
+                 ; as <- sepBy1 attribute (oneOf ":;")
+                 ; _ <- eol
+                 ; return Field { pangalan = a, attributes = as } }
 
--- Parse a field
+-- Parse a field that may have continuation lines.
 field :: GenParser Char st Field
 field = do { s <- simpleField
            ; cs <- continuations
            ; return (addContinuation cs s)
            }
-  where addContinuation :: [String] -> Field -> Field
+  where -- Add the continuation data to the field being parsed.
+        addContinuation :: [String] -> Field -> Field
         addContinuation [] f = f
         addContinuation ss f | noAttributes f = addSimpleAttribute f (concat ss)
         addContinuation ss f = updateLastAttribute f (extendLastAttribute ss)
@@ -155,21 +169,25 @@ continuation = do { blank
 continuations :: GenParser Char st [String]
 continuations = many continuation
 
--- Open and close of an entry
+-- Open and close of an entry.
 openEntry, closeEntry :: GenParser Char st ()
 openEntry = string "BEGIN:VCARD\n" >> return ()
 closeEntry = string "END:VCARD" >> return ()
 
+-- An entry consists of one or more fields.
 data Entry = Entry { fields :: [Field] } deriving (Show)
 
+-- Parse an entry.
 entry :: GenParser Char st Entry
 entry = do { openEntry
-           ; fs <- manyTill field (try closeEntry) -- !! Need to use manyTill field closeEntry
+           ; fs <- manyTill field (try closeEntry)
            ; return Entry { fields = fs }
            }
 
+-- A VCF file is a list of entries.
 type VCF = [Entry]
 
+-- Parse a VCF File.
 vcfFile :: GenParser Char st VCF
 vcfFile = sepBy entry (char '\n')
 
@@ -184,7 +202,7 @@ t1 = test attribute "a=b"
 t2 = test attribute "ab"
 t3 = test attribute "=b"
 -- Test field parser
-t4,t5,t6,t7,t8,t9,t10 :: Either ParseError Field
+t4,t5,t6,t7,t8,t9,t10,t11,t12 :: Either ParseError Field
 t4 = test field "X-ABUID:4709EC50-7594-4F67-85E1-6870DA65FCBA:ABPerson\n"
 t5 = test field "ab:\n"
 t6 = test field "ab:c\n"
@@ -193,6 +211,7 @@ t8 = test field "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n"
 t9 = test field ":kdkdk\n" -- Should fail (left "(unknown)")
 t10 = test field "ORG:Macys;\n"
 t11 = test field "\n" -- Should fail, empty line not allowed
+t12 = test field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n"
 t21,t23 :: Either ParseError Field
 t21 = test field "ORG:Macys;\n -kdkdkdkd\n" -- Should fail because of '-' in the continuation
 t22 = test field "ORG:Macys--\n mcmcmcmc\n"
@@ -200,16 +219,12 @@ t23 = test field "\n mcmcmcmc\n"
 t30 :: Either ParseError Entry
 t30 = test entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
 t40,t41 :: Either ParseError VCF
-t40 = test vcfFile "ORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
+t40 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
 t41 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD"
-
-printConfig = do
-  contents <- readFile "stack.yaml"
-  putStrLn contents
 
 main :: IO ()
 main = do
-  arubala <- readFile "Arubala.test"
+  arubala <- readFile "test/Arubala.test"
   parseTest entry arubala
 
 m = main
