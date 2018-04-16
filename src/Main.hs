@@ -1,7 +1,13 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Main where
 
 import System.IO (readFile)
 import Text.ParserCombinators.Parsec
+import GHC.Generics
+import Data.Aeson
 
 {- A VCF file contains a list of entries, each entry has the following:
  Opener: BEGIN:VCARD
@@ -57,7 +63,7 @@ eol :: GenParser Char st Char -- The end of line character is \n
 eol = char '\n'
 
 -- Convert character to appropriate item separator.
-data Separator = Colon | Semicolon | End deriving (Show)
+data Separator = Colon | Semicolon | End deriving (Show, Generic, ToJSON)
 toSeparator :: Char -> Separator
 toSeparator ':' = Colon
 toSeparator ';' = Semicolon
@@ -70,7 +76,7 @@ itemSeparator = oneOf(":;\n") >>= return . toSeparator
 -- Attributes of an item.
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
-               | NoAttribute deriving (Show)
+               | NoAttribute deriving (Show, Generic, ToJSON)
 -- Constructor for a Simple Attribute
 mkSimpleAttribute :: String -> Attribute
 mkSimpleAttribute s = SimpleAttribute { name = s }
@@ -100,7 +106,8 @@ attribute :: GenParser Char st Attribute
 attribute = try complexAttribute <|> simpleAttribute
 
 -- A field has a name, and a list of attributes.
-data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show)
+data Field = Field { pangalan :: String
+                   , attributes :: [Attribute] } deriving (Show, Generic, ToJSON)
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
@@ -175,7 +182,7 @@ openEntry = string "BEGIN:VCARD\n" >> return ()
 closeEntry = string "END:VCARD" >> return ()
 
 -- An entry consists of one or more fields.
-data Entry = Entry { fields :: [Field] } deriving (Show)
+data Entry = Entry { fields :: [Field] } deriving (Show, Generic, ToJSON)
 
 -- Parse an entry.
 entry :: GenParser Char st Entry
@@ -185,11 +192,12 @@ entry = do { openEntry
            }
 
 -- A VCF file is a list of entries.
-type VCF = [Entry]
+data VCF = VCF { entries :: [Entry] } deriving (Show, Generic, ToJSON)
 
 -- Parse a VCF File.
 vcfFile :: GenParser Char st VCF
-vcfFile = sepBy entry (char '\n')
+vcfFile = do { es <- sepBy entry (char '\n')
+             ; return VCF { entries = es } }
 
 -- Run the address book parse on a test input
 test,t :: GenParser Char () a -> String -> Either ParseError a
