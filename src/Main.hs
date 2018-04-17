@@ -8,8 +8,9 @@ import Text.ParserCombinators.Parsec
 import GHC.Generics
 import Data.Monoid ((<>))
 import Data.Either
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode)
-import Data.ByteString.Lazy.Char8 as DBC8 (putStrLn)
+import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(String))
+import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
+import Data.Text as T (pack)
 
 {- A VCF file contains a list of entries, each entry has the following:
  Opener: BEGIN:VCARD
@@ -122,8 +123,8 @@ data Field = Field { pangalan :: String
                    , attributes :: [Attribute] } deriving (Show, Generic)
 
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object [ "name" .= p, "value" .= toJSON as]
-  toEncoding (Field { pangalan = p, attributes = as}) = pairs ("name" .= p <> "value" .= toJSON as) 
+  toJSON (Field { pangalan = p, attributes = as}) = object [ T.pack p .= toJSON as]
+  toEncoding (Field { pangalan = p, attributes = as}) = pairs (T.pack p .= toJSON as)
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
@@ -239,7 +240,7 @@ t = test
 jsonTest :: (ToJSON a) => GenParser Char () a -> String -> IO ()
 jsonTest p s = do { let ea = test p s
                         entry = fromRight (error "OOOOOOPS") ea
-                  ; DBC8.putStrLn (encode entry)
+                  ; DBLC8.putStrLn (encode entry)
                   ; return ()
                   }
 
@@ -273,12 +274,18 @@ t11 = test field "\n" -- Should fail, empty line not allowed
 j11 = jsonTest field "\n" -- Should fail, empty line not allowed
 t12 = test field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n"
 j12 = jsonTest field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n"
-t21,t23 :: Either ParseError Field
+t21,t22,t23 :: Either ParseError Field
+j21,j22,j23 :: IO ()
 t21 = test field "ORG:Macys;\n -kdkdkdkd\n" -- Should fail because of '-' in the continuation
+j21 = jsonTest field "ORG:Macys;\n -kdkdkdkd\n" -- Should fail because of '-' in the continuation
 t22 = test field "ORG:Macys--\n mcmcmcmc\n"
+j22 = jsonTest field "ORG:Macys--\n mcmcmcmc\n"
 t23 = test field "\n mcmcmcmc\n"
+j23 = jsonTest field "\n mcmcmcmc\n"
 t30 :: Either ParseError Entry
+j30 :: IO ()
 t30 = test entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
+j30 = jsonTest entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
 t40,t41 :: Either ParseError VCF
 t40 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
 t41 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD"
