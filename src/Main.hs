@@ -6,7 +6,8 @@ module Main where
 import System.IO (readFile)
 import Text.ParserCombinators.Parsec
 import GHC.Generics
-import Data.Monoid((<>))
+import Data.Monoid ((<>))
+import Data.Either
 import Data.Aeson as Aeson
 import Data.ByteString.Lazy (unpack)
 
@@ -87,7 +88,9 @@ mkSimpleAttribute :: String -> Attribute
 mkSimpleAttribute s = SimpleAttribute { name = s }
 instance ToJSON Attribute where
   toJSON (ComplexAttribute { name = n, value = v}) = object ["name" .= n, "value" .= v]
+  toJSON (SimpleAttribute { name = n }) = object ["name" .= n]
   toEncoding (ComplexAttribute { name = n, value = v}) = pairs ("name" .= n <> "value" .= v) 
+  toEncoding (SimpleAttribute { name = n }) = pairs ("name" .= n)
 
 -- Parser for a complex attribute; it has the form 'name = value'
 complexAttribute :: GenParser Char st Attribute
@@ -115,7 +118,11 @@ attribute = try complexAttribute <|> simpleAttribute
 
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String
-                   , attributes :: [Attribute] } deriving (Show, Generic, ToJSON)
+                   , attributes :: [Attribute] } deriving (Show, Generic)
+
+instance ToJSON Field where
+  toJSON (Field { pangalan = p, attributes = as}) = object [ "name" .= p, "value" .= toJSON as]
+  toEncoding (Field { pangalan = p, attributes = as}) = pairs ("name" .= p <> "value" .= toJSON as) 
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
