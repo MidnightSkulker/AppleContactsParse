@@ -1,11 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import System.IO (readFile)
 import Text.ParserCombinators.Parsec
 import GHC.Generics
-import Data.Aeson
+import Data.Monoid((<>))
+import Data.Aeson as Aeson
 import Data.ByteString.Lazy (unpack)
 
 {- A VCF file contains a list of entries, each entry has the following:
@@ -63,6 +65,10 @@ eol = char '\n'
 
 -- Convert character to appropriate item separator.
 data Separator = Colon | Semicolon | End deriving (Show, Generic, ToJSON)
+fromSeparator :: Separator -> Char
+fromSeparator Colon = ':'
+fromSeparator Semicolon = ';'
+fromSeparator End = '\n'
 toSeparator :: Char -> Separator
 toSeparator ':' = Colon
 toSeparator ';' = Semicolon
@@ -75,10 +81,13 @@ itemSeparator = oneOf(":;\n") >>= return . toSeparator
 -- Attributes of an item.
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
-               | NoAttribute deriving (Show, Generic, ToJSON)
+               | NoAttribute deriving (Show, Generic)
 -- Constructor for a Simple Attribute
 mkSimpleAttribute :: String -> Attribute
 mkSimpleAttribute s = SimpleAttribute { name = s }
+instance ToJSON Attribute where
+  toJSON (ComplexAttribute { name = n, value = v}) = object ["name" .= n, "value" .= v]
+  toEncoding (ComplexAttribute { name = n, value = v}) = pairs ("name" .= n <> "value" .= v) 
 
 -- Parser for a complex attribute; it has the form 'name = value'
 complexAttribute :: GenParser Char st Attribute
@@ -208,7 +217,7 @@ jsonTest :: (ToJSON a) => GenParser Char () a -> String -> IO ()
 jsonTest p s = do { let ea = test p s
                   ; case ea of
                       Left e -> putStrLn (show e)
-                      Right a -> putStrLn (show (encode a))
+                      Right a -> putStrLn (show (toJSON a))
                   }
 
 -- Test attribute parser
