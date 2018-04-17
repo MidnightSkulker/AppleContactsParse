@@ -83,14 +83,15 @@ itemSeparator = oneOf(":;\n") >>= return . toSeparator
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
                | NoAttribute deriving (Show, Generic)
--- Constructor for a Simple Attribute
-mkSimpleAttribute :: String -> Attribute
-mkSimpleAttribute s = SimpleAttribute { name = s }
 instance ToJSON Attribute where
   toJSON (ComplexAttribute { name = n, value = v}) = object ["name" .= n, "value" .= v]
   toJSON (SimpleAttribute { name = n }) = object ["name" .= n]
   toEncoding (ComplexAttribute { name = n, value = v}) = pairs ("name" .= n <> "value" .= v) 
   toEncoding (SimpleAttribute { name = n }) = pairs ("name" .= n)
+
+-- Constructor for a Simple Attribute
+mkSimpleAttribute :: String -> Attribute
+mkSimpleAttribute s = SimpleAttribute { name = s }
 
 -- Parser for a complex attribute; it has the form 'name = value'
 complexAttribute :: GenParser Char st Attribute
@@ -244,7 +245,7 @@ jsonTest p s = do { let ea = test p s
 
 -- Test attribute parser
 t1,t2,t3 :: Either ParseError Attribute
-j1, j2, j3 :: IO ()
+j1,j2,j3 :: IO ()
 t1 = test attribute "a=b"
 j1 = jsonTest attribute "a=b"
 t2 = test attribute "ab"
@@ -253,15 +254,25 @@ t3 = test attribute "=b"
 j3 = jsonTest attribute "=b"
 -- Test field parser
 t4,t5,t6,t7,t8,t9,t10,t11,t12 :: Either ParseError Field
+j4,j5,j6,j7,j8,j9,j10,j11,j12 :: IO ()
 t4 = test field "X-ABUID:4709EC50-7594-4F67-85E1-6870DA65FCBA:ABPerson\n"
+j4 = jsonTest field "X-ABUID:4709EC50-7594-4F67-85E1-6870DA65FCBA:ABPerson\n"
 t5 = test field "ab:\n"
+j5 = jsonTest field "ab:\n"
 t6 = test field "ab:c\n"
+j6 = jsonTest field "ab:c\n"
 t7 = test field "N:;;;;\n"
+j7 = jsonTest field "N:;;;;\n"
 t8 = test field "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n"
+j8 = jsonTest field "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n"
 t9 = test field ":kdkdk\n" -- Should fail (left "(unknown)")
+j9 = jsonTest field ":kdkdk\n" -- Should fail (left "(unknown)")
 t10 = test field "ORG:Macys;\n"
+j10 = jsonTest field "ORG:Macys;\n"
 t11 = test field "\n" -- Should fail, empty line not allowed
+j11 = jsonTest field "\n" -- Should fail, empty line not allowed
 t12 = test field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n"
+j12 = jsonTest field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n"
 t21,t23 :: Either ParseError Field
 t21 = test field "ORG:Macys;\n -kdkdkdkd\n" -- Should fail because of '-' in the continuation
 t22 = test field "ORG:Macys--\n mcmcmcmc\n"
