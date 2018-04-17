@@ -8,8 +8,8 @@ import Text.ParserCombinators.Parsec
 import GHC.Generics
 import Data.Monoid ((<>))
 import Data.Either
-import Data.Aeson as Aeson
-import Data.ByteString.Lazy (unpack)
+import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode)
+import Data.ByteString.Lazy.Char8 as DBC8 (putStrLn)
 
 {- A VCF file contains a list of entries, each entry has the following:
  Opener: BEGIN:VCARD
@@ -197,7 +197,11 @@ openEntry = string "BEGIN:VCARD\n" >> return ()
 closeEntry = string "END:VCARD" >> return ()
 
 -- An entry consists of one or more fields.
-data Entry = Entry { fields :: [Field] } deriving (Show, Generic, ToJSON)
+data Entry = Entry { fields :: [Field] } deriving (Show, Generic)
+
+instance ToJSON Entry where
+  toJSON (Entry { fields = fs}) = object [ "fields" .= toJSON fs ]
+  toEncoding (Entry { fields = fs}) = pairs ("fields" .= toJSON fs) 
 
 -- Parse an entry.
 entry :: GenParser Char st Entry
@@ -207,7 +211,11 @@ entry = do { openEntry
            }
 
 -- A VCF file is a list of entries.
-data VCF = VCF { entries :: [Entry] } deriving (Show, Generic, ToJSON)
+data VCF = VCF { entries :: [Entry] } deriving (Show, Generic)
+
+instance ToJSON VCF where
+  toJSON (VCF { entries = es}) = object [ "entries" .= toJSON es ]
+  toEncoding (VCF { entries = es}) = pairs ("entries" .= toJSON es) 
 
 -- Parse a VCF File.
 vcfFile :: GenParser Char st VCF
@@ -220,18 +228,29 @@ test p testCase = parse p "(unknown)" testCase
 t = test
 
 -- Convert a parser test into a parser and json test.
+-- jsonTest :: (ToJSON a) => Either ParseError a -> String -> IO ()
+-- jsonTest p s = do { let ea = test p s
+--                   ; case ea of
+--                       Left e -> putStrLn (show e)
+--                       Right a -> putStrLn (show (toJSON a))
+--                   }
+
 jsonTest :: (ToJSON a) => GenParser Char () a -> String -> IO ()
 jsonTest p s = do { let ea = test p s
-                  ; case ea of
-                      Left e -> putStrLn (show e)
-                      Right a -> putStrLn (show (toJSON a))
+                        entry = fromRight (error "OOOOOOPS") ea
+                  ; DBC8.putStrLn (encode entry)
+                  ; return ()
                   }
 
 -- Test attribute parser
 t1,t2,t3 :: Either ParseError Attribute
+j1, j2, j3 :: IO ()
 t1 = test attribute "a=b"
+j1 = jsonTest attribute "a=b"
 t2 = test attribute "ab"
+j2 = jsonTest attribute "ab"
 t3 = test attribute "=b"
+j3 = jsonTest attribute "=b"
 -- Test field parser
 t4,t5,t6,t7,t8,t9,t10,t11,t12 :: Either ParseError Field
 t4 = test field "X-ABUID:4709EC50-7594-4F67-85E1-6870DA65FCBA:ABPerson\n"
