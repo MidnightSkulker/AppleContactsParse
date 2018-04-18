@@ -287,8 +287,11 @@ j30 :: IO ()
 t30 = test entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
 j30 = jsonTest entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
 t40,t41 :: Either ParseError VCF
+j40,j41 :: IO ()
 t40 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
+j40 = jsonTest vcfFile "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
 t41 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD"
+j41 = jsonTest vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD"
 
 main :: IO ()
 main = do
