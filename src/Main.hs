@@ -12,14 +12,14 @@ import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(Strin
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
 import Data.Text as T (pack)
 
-{- A VCF file contains a list of entries, each entry has the following:
+{- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
  List of fields
  Closer: END:VCARD
  Grammatically, this is
 
- VCF = [Entry]
- Entry = 'BEGIN:VCARD'[Field]'END:VCARD'
+ VCF = [Card]
+ Card = 'BEGIN:VCARD'[Field]'END:VCARD'
 
  A field contains name, followed by a colon, and then a list of components,
  separated by semicolons. grammatically this is:
@@ -29,22 +29,22 @@ import Data.Text as T (pack)
 
  A component can be empty, represented by successive semicolons: ';;'
 
- Some entries look like this:
+ Some cards look like this:
 item1.EMAIL;type=INTERNET;type=pref:vicky.008@gmail.com
 item1.X-ABLabel:Dad
 
  This happens when you give a custom name to a field in the address book.
- This is really two entries as defined above. We will treat this syntactically as
- two entries, and regard the relation between them as a syntactic issue, not
+ This is really two cards as defined above. We will treat this syntactically as
+ two cards, and regard the relation between them as a syntactic issue, not
  a parsing issue.
 
- To make matters more annoying, some entries seem to have the style of a name
+ To make matters more annoying, some cards seem to have the style of a name
  with attributes. Here is an example:
 
 ADR;type=HOME;type=pref:;;4193 NW Scottsdale Dr;Beaverton;OR;97006;USA
 
- This IS a syntactic issue, we need to recognize this type of entry as well.
- Here the entry name is 'ADR', i.e. an address field. The components are now
+ This IS a syntactic issue, we need to recognize this type of card as well.
+ Here the card name is 'ADR', i.e. an address field. The components are now
  of two types, some have a name: 'type = HOME', while some are just a
  component without a name, such as '4193 NW Scottsdale Dr'.
 
@@ -193,36 +193,36 @@ continuation = do { blank
 continuations :: GenParser Char st [String]
 continuations = many continuation
 
--- Open and close of an entry.
-openEntry, closeEntry :: GenParser Char st ()
-openEntry = string "BEGIN:VCARD\n" >> return ()
-closeEntry = string "END:VCARD" >> return ()
+-- Open and close of an card.
+openCard, closeCard :: GenParser Char st ()
+openCard = string "BEGIN:VCARD\n" >> return ()
+closeCard = string "END:VCARD" >> return ()
 
--- An entry consists of one or more fields.
-data Entry = Entry { fields :: [Field] } deriving (Show, Generic)
+-- An card consists of one or more fields.
+data Card = Card { fields :: [Field] } deriving (Show, Generic)
 
-instance ToJSON Entry where
-  toJSON (Entry { fields = fs}) = object [ "fields" .= toJSON fs ]
-  toEncoding (Entry { fields = fs}) = pairs ("fields" .= toJSON fs) 
+instance ToJSON Card where
+  toJSON (Card { fields = fs}) = object [ "fields" .= toJSON fs ]
+  toEncoding (Card { fields = fs}) = pairs ("fields" .= toJSON fs) 
 
--- Parse an entry.
-entry :: GenParser Char st Entry
-entry = do { openEntry
-           ; fs <- manyTill field (try closeEntry)
-           ; return Entry { fields = fs }
+-- Parse an card.
+card :: GenParser Char st Card
+card = do { openCard
+           ; fs <- manyTill field (try closeCard)
+           ; return Card { fields = fs }
            }
 
--- A VCF file is a list of entries.
-data VCF = VCF { entries :: [Entry] } deriving (Show, Generic)
+-- A VCF file is a list of cards.
+data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
 
 instance ToJSON VCF where
-  toJSON (VCF { entries = es}) = object [ "entries" .= toJSON es ]
-  toEncoding (VCF { entries = es}) = pairs ("entries" .= toJSON es) 
+  toJSON (VCF { cards = es}) = object [ "cards" .= toJSON es ]
+  toEncoding (VCF { cards = es}) = pairs ("cards" .= toJSON es) 
 
 -- Parse a VCF File.
 vcfFile :: GenParser Char st VCF
-vcfFile = do { es <- sepBy entry (char '\n')
-             ; return VCF { entries = es } }
+vcfFile = do { es <- sepBy card (char '\n')
+             ; return VCF { cards = es } }
 
 -- Run the address book parse on a test input
 test,t :: GenParser Char () a -> String -> Either ParseError a
@@ -239,8 +239,8 @@ t = test
 
 jsonTest :: (ToJSON a) => GenParser Char () a -> String -> IO ()
 jsonTest p s = do { let ea = test p s
-                        entry = fromRight (error "OOOOOOPS") ea
-                  ; DBLC8.putStrLn (encode entry)
+                        card = fromRight (error "OOOOOOPS") ea
+                  ; DBLC8.putStrLn (encode card)
                   ; return ()
                   }
 
@@ -282,10 +282,10 @@ t22 = test field "ORG:Macys--\n mcmcmcmc\n"
 j22 = jsonTest field "ORG:Macys--\n mcmcmcmc\n"
 t23 = test field "\n mcmcmcmc\n"
 j23 = jsonTest field "\n mcmcmcmc\n"
-t30 :: Either ParseError Entry
+t30 :: Either ParseError Card
 j30 :: IO ()
-t30 = test entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
-j30 = jsonTest entry "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
+t30 = test card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
+j30 = jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n"
 t40,t41 :: Either ParseError VCF
 j40,j41 :: IO ()
 t40 = test vcfFile "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD"
@@ -296,6 +296,6 @@ j41 = jsonTest vcfFile "BEGIN:VCARD\nORG:Macys;\nEND:VCARD"
 main :: IO ()
 main = do
   arubala <- readFile "test/Arubala.test"
-  parseTest entry arubala
+  parseTest card arubala
 
 m = main
