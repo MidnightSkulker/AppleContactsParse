@@ -9,11 +9,9 @@ import Parse
 
 -- Run the address book parse on a test input
 test,t :: GenParser Char () a -> String -> Either ParseError a
-test p testCase = parse p "(unknown)" testCase
+test p testCase = parse p "parse Failure" testCase
 t = test
 
 jsonTest :: (ToJSON a) => GenParser Char () a -> String -> String
-jsonTest p s = let ea = test p s
-                   card = fromRight (error "OOOOOOPS") ea
-               in DBLC8.unpack (encode card)
+jsonTest p s = either show (DBLC8.unpack . encode) (test p s)
 
