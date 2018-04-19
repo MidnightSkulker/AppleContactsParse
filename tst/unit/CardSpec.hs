@@ -14,10 +14,10 @@ spec = do
       jsonTest attribute "a=b" `shouldBe` "{\"name\":\"a\",\"value\":\"b\"}"
 
     it "ab:\n" $
-      jsonTest field "ab:\n" `shouldBe` "{\"ab\":[{\"name\":\"\"}]"
+      jsonTest field "ab:\n" `shouldBe` "{\"ab\":[{\"name\":\"\"}]}"
 
     it "ab:c\n" $
-      jsonTest field "ab:c\n" `shouldBe` "junk"
+      jsonTest field "ab:c\n" `shouldBe` "{\"ab\":[{\"name\":\"c\"}]}"
 
     it "N:;;;;\n" $
       jsonTest field "N:;;;;\n" `shouldBe` "junk"
