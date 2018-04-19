@@ -1,6 +1,6 @@
 name:                AppleContactsParse
 version:             0.1.0.0
--- synopsis:
+synopsis:            Convert Apple Contacts to JSON file
 -- description:
 homepage:            https://github.com/MidnightSkulker/AppleContactsParse#readme
 license:             BSD3
@@ -26,8 +26,12 @@ executable AppleContactsParse
 
 test-suite unit-tests
   type:                exitcode-stdio-1.0
-  main-is:             CardSpec.hs
-  hs-source-dirs:      tst/unit
-  build-depends:       base,
+  main-is:             Spec.hs
+  hs-source-dirs:      tst/unit, src
+  build-depends:       base >= 4.7 && < 5,
                        hspec,
-                       hspec-discover
+                       hspec-discover,
+                       parsec,
+                       bytestring,
+                       aeson,
+                       text
