@@ -27,6 +27,7 @@ executable AppleContactsParse
 test-suite unit-tests
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
+  other-modules:       CardSpec, Parse, Test
   hs-source-dirs:      tst/unit, src
   build-depends:       base >= 4.7 && < 5,
                        hspec,
