@@ -3,8 +3,7 @@ module Main where
 import Text.ParserCombinators.Parsec
 import Parse
 import Test
--- import System.Console.ParseArgs
-import Options.Applicative
+import Args
 
 main :: IO ()
 main = do
