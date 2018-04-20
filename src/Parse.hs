@@ -220,6 +220,6 @@ instance ToJSON VCF where
   toEncoding (VCF { cards = es}) = pairs ("cards" .= toJSON es) 
 
 -- Parse a VCF File.
-vcfFile :: GenParser Char st VCF
-vcfFile = do { es <- sepBy card (char '\n')
-             ; return VCF { cards = es } }
+vcf :: GenParser Char st VCF
+vcf = do { es <- sepBy card (char '\n')
+         ; return VCF { cards = es } }
