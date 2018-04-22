@@ -5,19 +5,18 @@ module Args where
 -- import System.Console.ParseArgs
 import Options.Applicative
 import Data.Semigroup ((<>))
+import Data.String
 
 -- Parsed arguments: The input (vcf) file and the output (json) file.
 data ParsedArgs = ParsedArgs { input :: String, output :: String } deriving (Show)
+
+-- instance IsString ParsedArgs where
+--    fromString = undefined
 
 commandLineOptions = info (parseArgs <**> helper)
       ( fullDesc
      <> progDesc "Convert Mac Address Book to JSON"
      <> header "Gronk" )
-
--- parseArgs :: Parser ()
--- parseArgs = () <$
---   switch (long "vcf") <*
---   switch (long "json")
 
 parseArgs :: Parser ParsedArgs
 parseArgs = ParsedArgs
@@ -31,3 +30,4 @@ parseArgs = ParsedArgs
          <> short 'j'
          <> metavar "STRING"
          <> help "output (json) file" )
+      <|> (ParsedArgs <$> argument str (metavar "FILE") <*> argument str (metavar "FILE"))
