@@ -10,9 +10,6 @@ import Data.String
 -- Parsed arguments: The input (vcf) file and the output (json) file.
 data ParsedArgs = ParsedArgs { input :: String, output :: String } deriving (Show)
 
--- instance IsString ParsedArgs where
---    fromString = undefined
-
 commandLineOptions = info (parseArgs <**> helper)
       ( fullDesc
      <> progDesc "Convert Mac Address Book to JSON"
