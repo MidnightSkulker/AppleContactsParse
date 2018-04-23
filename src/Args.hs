@@ -21,6 +21,8 @@ explicitArgs =
     <*> strOption ( long "json" <> short 'j' <> metavar "STRING" <> help "output .json" )
   -- Or you can use positional notation, with the .vcf first and .json second.
   <|> (ParsedArgs <$> argument str (metavar "FILE") <*> argument str (metavar "FILE"))
+  <|> (ParsedArgs <$> strOption ( long "vcf" <> short 'v' <> metavar "STRING" <> help "input .vcf" ) <*> argument str (metavar "FILE"))
+  <|> (ParsedArgs <$> argument str (metavar "FILE") <*> strOption ( long "vcf" <> short 'v' <> metavar "STRING" <> help "input .vcf" ))
 
 -- For Arguments that are left out: The command line is just the name of the program
 -- redirects for stdin and stdout
