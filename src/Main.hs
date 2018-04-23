@@ -5,6 +5,7 @@ import Text.ParserCombinators.Parsec
 import Parse
 import Test
 import Args
+import Files
 
 main :: IO ()
 main = do

@@ -16,7 +16,7 @@ extra-source-files:  README.md
 executable AppleContactsParse
   hs-source-dirs:      src
   main-is:             Main.hs
-  other-modules:       Parse, Test, Args
+  other-modules:       Parse, Test, Args, Files
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
                        parsec,

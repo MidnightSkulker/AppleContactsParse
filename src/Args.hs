@@ -2,6 +2,7 @@
 -- Parsing the arguments to the program
 module Args where
 
+import System.IO
 import Options.Applicative
 import Data.Semigroup ((<>))
 
@@ -31,3 +32,6 @@ anyArg = vcfExplicit <|> jsonExplicit <|> vcfPositional <|> jsonPositional
 -- Return a list of parsed parameters
 parseArgList :: Parser ListArgs
 parseArgList = ListArgs <$> many anyArg
+
+data Files = Files { input :: Handle, output :: Handle } deriving (Show)
+-- Analyzed the Resulting Arguments
