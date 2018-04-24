@@ -19,6 +19,7 @@ argString (JSON s) = s
 argString (Positional s) = s
 
 -- Parse the command line options
+commandLineOptions :: ParserInfo Args
 commandLineOptions = info (parseArgList <**> helper)
       ( fullDesc <> progDesc "Convert Mac Address Book to JSON" <> header "Gronk" )
 
