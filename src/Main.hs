@@ -20,7 +20,6 @@ main = do { parsedOptions <- execParser commandLineOptions
                                 ; putStrLn (show (input files) ++ " is open")
                                 ; let json = jsonTest vcf vcfInput
                                 ; hPutStrLn (output files) json
-                                ; putStrLn (show (output files) ++ " is written")
                                 ; hClose (input files)
                                 ; hClose (output files)
                                 }

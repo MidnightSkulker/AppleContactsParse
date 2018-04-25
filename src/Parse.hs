@@ -65,6 +65,17 @@ blank = char ' '
 eol :: GenParser Char st Char -- The end of line character is \n
 eol = char '\n'
 
+-- Separated by <sep>, optionally ended by <end>
+sepByEndBy :: GenParser Char st a -> GenParser Char st Char -> GenParser Char st Char -> GenParser Char st  [a]
+sepByEndBy p sep end =
+  do{ x <- p
+    ; do { _ <- end
+         ; xs <- sepEndBy p sep
+         ; return (x:xs)
+         }
+         <|> return [x]
+    }
+
 -- Convert character to appropriate item separator.
 data Separator = Colon | Semicolon | End deriving (Show, Generic, ToJSON)
 fromSeparator :: Separator -> Char
@@ -208,9 +219,9 @@ instance ToJSON Card where
 -- Parse an card.
 card :: GenParser Char st Card
 card = do { openCard
-           ; fs <- manyTill field (try closeCard)
-           ; return Card { fields = fs }
-           }
+          ; fs <- manyTill field (try closeCard)
+          ; return Card { fields = fs }
+          }
 
 -- A VCF file is a list of cards.
 data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
@@ -222,4 +233,5 @@ instance ToJSON VCF where
 -- Parse a VCF File.
 vcf :: GenParser Char st VCF
 vcf = do { es <- sepBy card (char '\n')
-         ; return VCF { cards = es } }
+         ; return VCF { cards = es }
+         }
