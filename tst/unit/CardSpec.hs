@@ -8,7 +8,7 @@ import Data.Text as T (unpack, pack)
 import Data.ByteString.Lazy.Char8 as DBLC8 (pack)
 import Text.ParserCombinators.Parsec
 
-gronk :: GenParser Char st String -- Used for local testing only
+gronk :: GenParser Char st String
 gronk = string "gronk"
 
 spec :: Spec
