@@ -232,6 +232,6 @@ instance ToJSON VCF where
 
 -- Parse a VCF File.
 vcf :: GenParser Char st VCF
-vcf = do { es <- sepBy card (char '\n')
+vcf = do { es <- sepByEndBy card (char '\n') (eof >> return '\n')
          ; return VCF { cards = es }
          }
