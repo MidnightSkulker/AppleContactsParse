@@ -231,6 +231,10 @@ instance ToJSON VCF where
   toEncoding (VCF { cards = es}) = pairs ("cards" .= toJSON es) 
 
 -- Parse a VCF File.
+-- We allow the file to end with a \n, or not. So the last line can be either
+-- END:VCARD\n
+-- or just
+-- END:VCARD
 vcf :: GenParser Char st VCF
 vcf = do { es <- sepByEndBy card (char '\n') (eof >> return '\n')
          ; return VCF { cards = es }
