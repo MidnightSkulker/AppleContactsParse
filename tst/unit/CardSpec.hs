@@ -6,6 +6,10 @@ import Parse
 import Data.Aeson as Aeson (ToJSON(..), encode)
 import Data.Text as T (unpack, pack)
 import Data.ByteString.Lazy.Char8 as DBLC8 (pack)
+import Text.ParserCombinators.Parsec
+
+gronk :: GenParser Char st String -- Used for local testing only
+gronk = string "gronk"
 
 spec :: Spec
 spec = do
@@ -55,3 +59,10 @@ spec = do
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
       jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[{\"name\":\"Macys\"},{\"name\":\"\"}]}]}]}"
 
+    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk.gronk" `shouldBe` "[\"gronk\"]"
+
+    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk.gronk;" `shouldBe` "[\"gronk\"]"
+
+    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk" `shouldBe` "[\"gronk\"]"
+
+    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk;" `shouldBe` "[\"gronk\"]"

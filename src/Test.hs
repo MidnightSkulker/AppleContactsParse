@@ -14,4 +14,3 @@ t = test
 
 jsonTest :: (ToJSON a) => GenParser Char () a -> String -> String
 jsonTest p s = either show (DBLC8.unpack . encode) (test p s)
-
