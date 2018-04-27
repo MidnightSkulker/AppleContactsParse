@@ -24,6 +24,7 @@ executable AppleContactsParse
                        optparse-applicative,
                        parseargs,
                        aeson,
+                       json,
                        text
 
 test-suite unit-tests

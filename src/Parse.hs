@@ -1,6 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Parse where
 
 import System.IO (readFile)
@@ -8,9 +10,10 @@ import Text.ParserCombinators.Parsec
 import GHC.Generics
 import Data.Monoid ((<>))
 import Data.Either
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(String))
+import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, decode, KeyValue, Value(String), foldable, Value, Encoding, Series)
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
-import Data.Text as T (pack)
+import Data.Text as T (pack, Text)
+import Text.JSON
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -95,11 +98,23 @@ itemSeparator = oneOf(":;\n") >>= return . toSeparator
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
                | NoAttribute deriving (Show, Generic)
+
+-- Part of encoding the Attributes
+onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
+-- onePair SimpleAttribute { name = n } = T.pack "name" .= n
+-- morePairs as = map onePair as
+aa = ComplexAttribute "a" "1"
+ab = ComplexAttribute "b" "2"
+-- t1 :: Aeson.Encoding
+-- t1 = pairs (onePair aa <> onePair ab)
+-- t2 = morePairs [aa, ab]
+morePairs [] = []
+morePairs (p:ps) = onePair p <> morePairs ps
+-- morePairs as = pairs (foldl (\xs x -> (T.pack (name x) .= "1") <> xs) [] as)
+
 instance ToJSON Attribute where
-  toJSON (ComplexAttribute { name = n, value = v}) = object ["name" .= n, "value" .= v]
-  toJSON (SimpleAttribute { name = n }) = object ["name" .= n]
-  toEncoding (ComplexAttribute { name = n, value = v}) = pairs ("name" .= n <> "value" .= v) 
-  toEncoding (SimpleAttribute { name = n }) = pairs ("name" .= n)
+  toJSON a = object [onePair a]
+  toEncoding = pairs . onePair
 
 -- Constructor for a Simple Attribute
 mkSimpleAttribute :: String -> Attribute
@@ -134,8 +149,8 @@ data Field = Field { pangalan :: String
                    , attributes :: [Attribute] } deriving (Show, Generic)
 
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object [ T.pack p .= toJSON as]
-  toEncoding (Field { pangalan = p, attributes = as}) = pairs (T.pack p .= toJSON as)
+  toJSON (Field { pangalan = p, attributes = as}) = object (map onePair as) -- still need p
+  toEncoding (Field { pangalan = p, attributes = as}) = foldable as
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
