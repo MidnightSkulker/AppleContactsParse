@@ -10,10 +10,10 @@ import Text.ParserCombinators.Parsec
 import GHC.Generics
 import Data.Monoid ((<>))
 import Data.Either
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, decode, KeyValue, Value(String), foldable, Value, Encoding, Series)
+import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, decode, KeyValue, Value(..), foldable, Value, Encoding, Series)
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
 import Data.Text as T (pack, Text)
-import Text.JSON
+import GHC.Exts (fromList)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -85,6 +85,7 @@ fromSeparator :: Separator -> Char
 fromSeparator Colon = ':'
 fromSeparator Semicolon = ';'
 fromSeparator End = '\n'
+-- Convert a character to a Separator
 toSeparator :: Char -> Separator
 toSeparator ':' = Colon
 toSeparator ';' = Semicolon
@@ -104,7 +105,12 @@ onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
 -- onePair SimpleAttribute { name = n } = T.pack "name" .= n
 -- morePairs as = map onePair as
 aa = ComplexAttribute "a" "1"
+oa = object [(T.pack "a", Number 1)]
 ab = ComplexAttribute "b" "2"
+ob = object [(T.pack "b", Number 2)]
+ac = ComplexAttribute "c" "3"
+oc = object [(T.pack "c", Number 3)]
+oabc = Array (fromList [oa,ob,oc])
 -- t1 :: Aeson.Encoding
 -- t1 = pairs (onePair aa <> onePair ab)
 -- t2 = morePairs [aa, ab]
@@ -149,7 +155,8 @@ data Field = Field { pangalan :: String
                    , attributes :: [Attribute] } deriving (Show, Generic)
 
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object (map onePair as) -- still need p
+  toJSON (Field { pangalan = p, attributes = as}) = object [undefined]
+    -- object (map onePair as) -- still need p
   toEncoding (Field { pangalan = p, attributes = as}) = foldable as
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
