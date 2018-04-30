@@ -104,11 +104,13 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
 oneField :: Attribute -> Value
 oneField ComplexAttribute { name = n, value = v } = object [(T.pack n, String (T.pack v))]
 oneField SimpleAttribute { name = n } = String (T.pack n)
+oneField NoAttribute = Null
 
 -- Encode a single Attribute
 onePair :: KeyValue p => Attribute -> p
 onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
 onePair SimpleAttribute { name = n } = T.pack "name" .= n
+onePair NoAttribute = error ("Oooooops")
 
 -- How to encode / decode an Attribute
 instance ToJSON Attribute where
@@ -150,6 +152,7 @@ data Field = Field { pangalan :: String
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack "fields",fields)]
     where fields = Array (fromList (map oneField as))
+
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
 lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
