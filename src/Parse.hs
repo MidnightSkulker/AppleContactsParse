@@ -101,22 +101,24 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
                | NoAttribute deriving (Show, Generic)
 
 -- Part of encoding the Attributes
-onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
--- onePair SimpleAttribute { name = n } = T.pack "name" .= n
--- morePairs as = map onePair as
+oneField :: Attribute -> Value
+oneField ComplexAttribute { name = n, value = v } = object [(T.pack n, String (T.pack v))]
+oneField SimpleAttribute { name = n } = String (T.pack n)
 aa = ComplexAttribute "a" "1"
-oa = object [(T.pack "a", Number 1)]
+oa = object [(T.pack "a", String "1")]
 ab = ComplexAttribute "b" "2"
-ob = object [(T.pack "b", Number 2)]
+ob = object [(T.pack "b", String "2")]
 ac = ComplexAttribute "c" "3"
-oc = object [(T.pack "c", Number 3)]
-oabc = Array (fromList [oa,ob,oc])
--- t1 :: Aeson.Encoding
--- t1 = pairs (onePair aa <> onePair ab)
--- t2 = morePairs [aa, ab]
-morePairs [] = []
-morePairs (p:ps) = onePair p <> morePairs ps
--- morePairs as = pairs (foldl (\xs x -> (T.pack (name x) .= "1") <> xs) [] as)
+oc = object [(T.pack "c", String "3")]
+f1 = Field { pangalan = "f", attributes = [aa,ab,ac] }
+aabc = [aa, ab, ac]
+oabc1 = Array (fromList (map oneField [aa,ab,ac]))
+oabc2 = Array (fromList [oa,ob,oc])
+ofield = object [(T.pack "fields", oabc1)]
+
+onePair :: KeyValue p => Attribute -> p
+onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
+onePair SimpleAttribute { name = n } = T.pack "name" .= n
 
 instance ToJSON Attribute where
   toJSON a = object [onePair a]
@@ -155,8 +157,8 @@ data Field = Field { pangalan :: String
                    , attributes :: [Attribute] } deriving (Show, Generic)
 
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object [undefined]
-    -- object (map onePair as) -- still need p
+  toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack "fields",fields)]
+    where fields = Array (fromList (map oneField as))
   toEncoding (Field { pangalan = p, attributes = as}) = foldable as
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
