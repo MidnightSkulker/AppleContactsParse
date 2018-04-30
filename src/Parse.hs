@@ -104,22 +104,13 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
 oneField :: Attribute -> Value
 oneField ComplexAttribute { name = n, value = v } = object [(T.pack n, String (T.pack v))]
 oneField SimpleAttribute { name = n } = String (T.pack n)
-aa = ComplexAttribute "a" "1"
-oa = object [(T.pack "a", String "1")]
-ab = ComplexAttribute "b" "2"
-ob = object [(T.pack "b", String "2")]
-ac = ComplexAttribute "c" "3"
-oc = object [(T.pack "c", String "3")]
-f1 = Field { pangalan = "f", attributes = [aa,ab,ac] }
-aabc = [aa, ab, ac]
-oabc1 = Array (fromList (map oneField [aa,ab,ac]))
-oabc2 = Array (fromList [oa,ob,oc])
-ofield = object [(T.pack "fields", oabc1)]
 
+-- Encode a single Attribute
 onePair :: KeyValue p => Attribute -> p
 onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
 onePair SimpleAttribute { name = n } = T.pack "name" .= n
 
+-- How to encode / decode an Attribute
 instance ToJSON Attribute where
   toJSON a = object [onePair a]
   toEncoding = pairs . onePair
@@ -159,8 +150,6 @@ data Field = Field { pangalan :: String
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack "fields",fields)]
     where fields = Array (fromList (map oneField as))
-  toEncoding (Field { pangalan = p, attributes = as}) = foldable as
-
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
 lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
@@ -263,3 +252,16 @@ vcf :: GenParser Char st VCF
 vcf = do { es <- sepByEndBy card (char '\n') (eof >> return '\n')
          ; return VCF { cards = es }
          }
+
+-- For testing
+aa = ComplexAttribute "a" "1"
+oa = object [(T.pack "a", String "1")]
+ab = ComplexAttribute "b" "2"
+ob = object [(T.pack "b", String "2")]
+ac = ComplexAttribute "c" "3"
+oc = object [(T.pack "c", String "3")]
+f1 = Field { pangalan = "f", attributes = [aa,ab,ac] }
+aabc = [aa, ab, ac]
+oabc1 = Array (fromList (map oneField [aa,ab,ac]))
+oabc2 = Array (fromList [oa,ob,oc])
+ofield = object [(T.pack "fields", oabc1)]
