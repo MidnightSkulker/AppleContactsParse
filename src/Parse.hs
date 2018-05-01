@@ -150,8 +150,12 @@ data Field = Field { pangalan :: String
                    , attributes :: [Attribute] } deriving (Show, Generic)
 
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack "fields",fields)]
-    where fields = Array (fromList (map oneField as))
+  toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack p, fields as)]
+    where fields :: [Attribute] -> Value
+          fields [] = Null
+          -- Do not embed a single value in Array constructor
+          fields [a] = toJSON a
+          fields as  = Array (fromList (map oneField as))
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
@@ -243,8 +247,8 @@ card = do { openCard
 data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
 
 instance ToJSON VCF where
-  toJSON (VCF { cards = es}) = object [ "cards" .= toJSON es ]
-  toEncoding (VCF { cards = es}) = pairs ("cards" .= toJSON es) 
+  toJSON (VCF { cards = es}) = object [ "card" .= toJSON es ]
+  toEncoding (VCF { cards = es}) = pairs ("card" .= toJSON es) 
 
 -- Parse a VCF File.
 -- We allow the file to end with a \n, or not. So the last line can be either

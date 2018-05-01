@@ -54,10 +54,10 @@ spec = do
       jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":[{\"ORG\":[{\"name\":\"Macys\"},{\"name\":\"\"}]}]}"
 
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[{\"name\":\"Macys\"},{\"name\":\"\"}]},{\"BDAY\":[{\"Continuation\":\"2014-06-09continue\"}]},{\"NOTE\":[{\"name\":\"Has Immunization Record\"}]}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "junk" -- "{\"cards\":[{\"fields\":[{\"ORG\":[{\"name\":\"Macys\"},{\"name\":\"\"}]},{\"BDAY\":[{\"Continuation\":\"2014-06-09"}]},{\"NOTE\":[{\"name\":\"Has Immunization Record\"}]}]}]}"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[{\"name\":\"Macys\"},{\"name\":\"\"}]}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "{\"card\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]}"
 
     it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk.gronk" `shouldBe` "[\"gronk\"]"
 
