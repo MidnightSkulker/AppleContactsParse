@@ -102,7 +102,10 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
 
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
-oneField ComplexAttribute { name = n, value = v } = object [(T.pack n, String (T.pack v))]
+oneField ComplexAttribute { name = n, value = v } =
+  if v == ""
+  then String (T.pack n)
+  else object [(T.pack n, String (T.pack v))]
 oneField SimpleAttribute { name = n } = String (T.pack n)
 oneField NoAttribute = Null
 
@@ -114,8 +117,12 @@ onePair NoAttribute = error ("Oooooops")
 
 -- How to encode / decode an Attribute
 instance ToJSON Attribute where
-  toJSON a = object [onePair a]
-  toEncoding = pairs . onePair
+  toJSON ComplexAttribute { name = n, value = v } =
+    if v == []
+    then String (T.pack n)
+    else object [T.pack n .= v]
+  toJSON SimpleAttribute { name = n } = String (T.pack n)
+  toJSON NoAttribute = Null
 
 -- Constructor for a Simple Attribute
 mkSimpleAttribute :: String -> Attribute
