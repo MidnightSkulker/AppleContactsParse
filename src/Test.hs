@@ -14,3 +14,9 @@ t = test
 
 jsonTest :: (ToJSON a) => GenParser Char () a -> String -> String
 jsonTest p s = either show (DBLC8.unpack . encode) (test p s)
+
+t1 :: String
+t1 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
+
+t2 :: String
+t2 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"

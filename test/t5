@@ -1,0 +1,4 @@
+#!/bin/bash
+set -v
+AppleContactsParse --vcf=ARCHIVE/all.vcf
+

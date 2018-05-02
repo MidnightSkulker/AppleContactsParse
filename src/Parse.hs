@@ -240,8 +240,7 @@ closeCard = string "END:VCARD" >> return ()
 data Card = Card { fields :: [Field] } deriving (Show, Generic)
 
 instance ToJSON Card where
-  toJSON (Card { fields = fs}) = object [ "fields" .= toJSON fs ]
-  toEncoding (Card { fields = fs}) = pairs ("fields" .= toJSON fs) 
+  toJSON (Card {fields = fs}) = object [ "fields" .= toJSON fs ]
 
 -- Parse an card.
 card :: GenParser Char st Card
@@ -254,8 +253,7 @@ card = do { openCard
 data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
 
 instance ToJSON VCF where
-  toJSON (VCF { cards = es}) = object [ "card" .= toJSON es ]
-  toEncoding (VCF { cards = es}) = pairs ("card" .= toJSON es) 
+  toJSON (VCF { cards = es}) = object [ "cards" .= toJSON es ]
 
 -- Parse a VCF File.
 -- We allow the file to end with a \n, or not. So the last line can be either
@@ -263,7 +261,8 @@ instance ToJSON VCF where
 -- or just
 -- END:VCARD
 vcf :: GenParser Char st VCF
-vcf = do { es <- sepByEndBy card (char '\n') (eof >> return '\n')
+vcf = do { -- es <- sepBy card (char '\n')
+           es <- sepByEndBy card (char '\n') (try (char '\n') <|> (eof >> return '\n'))
          ; return VCF { cards = es }
          }
 
