@@ -13,6 +13,7 @@ import Data.Either
 import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, decode, KeyValue, Value(..), foldable, Value, Encoding, Series)
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
 import Data.Text as T (pack, Text)
+import Data.Char (isAlphaNum)
 import GHC.Exts (fromList)
 
 {- A VCF file contains a list of cards, each card has the following:
@@ -224,9 +225,11 @@ field = do { s <- simpleField
 -- These continuations always seem to alphanumeric strings
 continuation :: GenParser Char st String
 continuation = do { blank
-                  ; a <- many alphaNum
+                  ; a <- many (satisfy okJpgChar)
                   ; _ <- eol
                   ; return a }
+  where okJpgChar :: Char -> Bool
+        okJpgChar c = isAlphaNum c || c == '/' || c == '+' || c == '='
 
 continuations :: GenParser Char st [String]
 continuations = many continuation
