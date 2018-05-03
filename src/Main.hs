@@ -16,7 +16,6 @@ main = do { parsedOptions <- execParser commandLineOptions
           ; case analyzedOptions of
               Left argError -> putStrLn (show argError)
               Right files -> do { vcfInput <- hGetContents (input files)
-                                ; putStrLn (show (input files) ++ " is open")
                                 ; let json = jsonTest vcf vcfInput
                                 ; let vcf2 = test vcf vcfInput
                                 ; case vcf2 of
