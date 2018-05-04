@@ -63,11 +63,3 @@ spec = do
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
       jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]}"
-
-    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk.gronk" `shouldBe` "[\"gronk\"]"
-
-    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk.gronk;" `shouldBe` "[\"gronk\"]"
-
-    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk" `shouldBe` "[\"gronk\"]"
-
-    it "gronk" $ jsonTest (sepByEndBy gronk (char '.') (char ';')) "gronk;" `shouldBe` "[\"gronk\"]"

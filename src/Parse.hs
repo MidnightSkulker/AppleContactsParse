@@ -71,33 +71,6 @@ blank = char ' '
 eol :: GenParser Char st String
 eol = many (oneOf "\r\n")
 
--- Separated by <sep>, optionally ended by <end>
-sepByEndBy :: GenParser Char st a -> GenParser Char st Char -> GenParser Char st Char -> GenParser Char st  [a]
-sepByEndBy p sep end =
-  do{ x <- p
-    ; do { _ <- end
-         ; xs <- sepEndBy p sep
-         ; return (x:xs)
-         }
-         <|> return [x]
-    }
-
--- Convert character to appropriate item separator.
-data Separator = Colon | Semicolon | End deriving (Show, Generic, ToJSON)
-fromSeparator :: Separator -> Char
-fromSeparator Colon = ':'
-fromSeparator Semicolon = ';'
-fromSeparator End = '\n'
--- Convert a character to a Separator
-toSeparator :: Char -> Separator
-toSeparator ':' = Colon
-toSeparator ';' = Semicolon
-toSeparator '\n' = End
-
--- Parse an item separator.
-itemSeparator :: GenParser Char st Separator
-itemSeparator = oneOf(":;\n") >>= return . toSeparator
-
 -- Attributes of an item.
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
@@ -111,12 +84,6 @@ oneField ComplexAttribute { name = n, value = v } =
   else object [(T.pack n, String (T.pack v))]
 oneField SimpleAttribute { name = n } = String (T.pack n)
 oneField NoAttribute = Null
-
--- Encode a single Attribute
-onePair :: KeyValue p => Attribute -> p
-onePair ComplexAttribute { name = n, value = v } = T.pack n .= v
-onePair SimpleAttribute { name = n } = T.pack "name" .= n
-onePair NoAttribute = error ("Oooooops")
 
 -- How to encode / decode an Attribute
 instance ToJSON Attribute where
@@ -265,9 +232,15 @@ instance ToJSON VCF where
 -- END:VCARD\n
 -- or just
 -- END:VCARD
+
+-- <Sob>, card separator must handle DOS end of line, even though this is
+-- an Apple product.
+cardSeparator :: GenParser Char st ()
+cardSeparator = (char '\n' >> return ()) <|> (string "\r\n" >> return ())
+
 vcf :: GenParser Char st VCF
-vcf = do { -- es <- sepBy card (char '\n')
-           es <- sepByEndBy card (char '\n') (try (char '\n') <|> (eof >> return '\n'))
+vcf = do { es <- sepBy card cardSeparator
+           -- es <- sepByEndBy card (char '\n') (try (char '\n') <|> (eof >> return '\n'))
          ; return VCF { cards = es }
          }
 

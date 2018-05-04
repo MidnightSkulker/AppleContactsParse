@@ -18,10 +18,10 @@ main = do { parsedOptions <- execParser commandLineOptions
               Right files -> do { vcfInput <- hGetContents (input files)
                                 ; let json = jsonTest vcf vcfInput
                                 ; let vcf2 = test vcf vcfInput
+                                ; hPutStrLn (output files) json
                                 ; case vcf2 of
                                     Left e -> putStrLn ("Error: " ++ show e)
                                     Right v -> putStrLn ("Number of cards " ++ show (length (cards v)))
-                                ; hPutStrLn (output files) json
                                 ; hClose (input files)
                                 ; hClose (output files)
                                 }
