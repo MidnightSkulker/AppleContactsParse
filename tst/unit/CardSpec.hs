@@ -44,7 +44,7 @@ spec = do
 
       
     it "ORG:Macys;\n -kdkdkdkd\n" $ -- Should fail because of '-' in the continuation
-      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "\"parse Failure\" (line 2, column 2):\nunexpected \"-\"\nexpecting letter or digit or \"\\n\""
+      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"Continuation\"]}"
 
     it "ORG:Macys--\n mcmcmcmc\n" $
       jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":{\"Continuation\":\"Macys--mcmcmcmc\"}}"
@@ -56,10 +56,10 @@ spec = do
       jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}"
 
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "{\"card\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]},{\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}},{\"NOTE\":\"Has Immunization Record\"}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]},{\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}},{\"NOTE\":\"Has Immunization Record\"}]}]}"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "{\"card\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]}"
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
       jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]}"

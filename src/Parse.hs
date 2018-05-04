@@ -66,8 +66,10 @@ whiteSpace :: GenParser Char st String
 whiteSpace = many (oneOf " \t\n")
 blank :: GenParser Char st Char
 blank = char ' '
-eol :: GenParser Char st Char -- The end of line character is \n
-eol = char '\n'
+-- The end of line character is \n, but for some reason Apple has chosen
+-- to use "\r\n" for these .vcf files
+eol :: GenParser Char st String
+eol = many (oneOf "\r\n")
 
 -- Separated by <sep>, optionally ended by <end>
 sepByEndBy :: GenParser Char st a -> GenParser Char st Char -> GenParser Char st Char -> GenParser Char st  [a]
@@ -236,7 +238,7 @@ continuations = many continuation
 
 -- Open and close of an card.
 openCard, closeCard :: GenParser Char st ()
-openCard = string "BEGIN:VCARD\n" >> return ()
+openCard = string "BEGIN:VCARD" >> eol >> return ()
 closeCard = string "END:VCARD" >> return ()
 
 -- An card consists of one or more fields.
@@ -248,7 +250,7 @@ instance ToJSON Card where
 -- Parse an card.
 card :: GenParser Char st Card
 card = do { openCard
-          ; fs <- manyTill field (try closeCard)
+          ; fs <- field `manyTill` (try closeCard)
           ; return Card { fields = fs }
           }
 
