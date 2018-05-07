@@ -24,6 +24,7 @@ executable AppleContactsParse
                        optparse-applicative,
                        parseargs,
                        aeson,
+                       network-uri,
                        text
 
 test-suite unit-tests
@@ -37,4 +38,5 @@ test-suite unit-tests
                        parsec,
                        bytestring,
                        aeson,
+                       network-uri,
                        text

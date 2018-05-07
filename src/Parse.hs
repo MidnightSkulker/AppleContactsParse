@@ -13,8 +13,9 @@ import Data.Either
 import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, decode, KeyValue, Value(..), foldable, Value, Encoding, Series)
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
 import Data.Text as T (pack, Text)
-import Data.Char (isAlphaNum)
+import Data.Char (isAlphaNum, isNumber)
 import GHC.Exts (fromList)
+import Network.URI
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -60,17 +61,40 @@ X-ABUID:67347CA9-0ECA-4C99-8D69-7E9EBFE3C209:ABPerson
 Don't know why the geniuses at Apple did this.
 If some of the code here gets ugly, my excuse is that the input is ugly.
 
+BUMMER: After getting most everything working, I discover URL entries:
+Here are three different formats
+item1.URL;type=pref:www.target.com
+item1.URL;type=pref:campus.educadium.com/OCCD/mod/certificate/view.php?id=3383&action=get
+item1.URL;type=pref:http://www.MomsandDads.com
+item5.URL:www.employereservices.com
+URL;type=HOME:mychartor.providence.org
+
+Most URL fields are of the first format. The second format add a monkey wrench that
+a URL can have and equal sign, which ruined my parsing of attributes such as "type=EMAIL".
+The third is another variation of the first, but it shows that a URL can have a colon
+after "http" or "https". This wrecks the significance of the colon in my parsing.
+The fourth format is another variation of the first, and it shows that not all
+of the entires have "type=pref". The last is a different format, without the beginning
+"item[nnn].URL".
+
+All of this suggests a special case for URL fields, which I will start working on now.
+
 -}
 
 whiteSpace :: GenParser Char st String
 whiteSpace = many (oneOf " \t\n")
 blank :: GenParser Char st Char
 blank = char ' '
+number :: GenParser Char st String
+number = many1 (satisfy isNumber)
+
 -- The end of line character is \n, but for some reason Apple has chosen
 -- to use "\r\n" for these .vcf files
 eol :: GenParser Char st String
 eol = many (oneOf "\r\n")
 
+-- The following definitions for attributes are for the vast majority of
+-- fields. They do not work for URL fields.
 -- Attributes of an item.
 data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
@@ -122,9 +146,48 @@ attributeValue = many (noneOf "=:;\n")
 attribute :: GenParser Char st Attribute
 attribute = try complexAttribute <|> simpleAttribute
 
+-- URI Characters
+uriChar :: GenParser Char st Char
+uriChar = satisfy isAlphaNum <|> oneOf("-._~:/?#[]@!$&'()*+,;=")
+
+-- URI Parser
+uri :: GenParser Char st String
+uri = do { uri <- many1 uriChar
+         ; eol
+         ; return uri
+         }
+
+-- These definitions are for URL fields
+
+-- For URLs like this
+-- URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/
+urlField1 :: GenParser Char st Field
+urlField1 = do { string "URL;"
+               ; attrs <- many complexAttribute
+               ; char ':'
+               ; urival <- uri
+               ; return URIField { attributes = attrs, uriStr = urival }
+               }
+
+-- For URLs like this
+-- item1.URL;type=pref:www.happypanda.com
+urlField2 :: GenParser Char st Field
+urlField2 = do { string "item"
+               ; n <- number
+               ; string ".URL;"
+               ; attrs <- many complexAttribute
+               ; char ':'
+               ; urival <- uri
+               ; return URIField { attributes = attrs, uriStr = urival }
+               }
+
+-- For all the URLs we know about so far
+urlField :: GenParser Char st Field
+urlField = urlField1 <|> urlField2
+
 -- A field has a name, and a list of attributes.
-data Field = Field { pangalan :: String
-                   , attributes :: [Attribute] } deriving (Show, Generic)
+data Field = Field { pangalan :: String, attributes :: [Attribute] }
+           | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
 
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack p, fields as)]
@@ -173,7 +236,7 @@ addSimpleAttribute f s = f { attributes = attributes f ++ [mkSimpleAttribute s] 
 simpleField :: GenParser Char st Field
 simpleField = do { a <- attributeName
                  ; _ <- oneOf ":;"
-                 ; as <- sepBy1 attribute (oneOf ":;")
+                 ; as <- attribute `sepBy1` (oneOf ":;")
                  ; _ <- eol
                  ; return Field { pangalan = a, attributes = as } }
 
@@ -239,7 +302,7 @@ cardSeparator :: GenParser Char st ()
 cardSeparator = (char '\n' >> return ()) <|> (string "\r\n" >> return ())
 
 vcf :: GenParser Char st VCF
-vcf = do { es <- sepBy card cardSeparator
+vcf = do { es <- card `sepBy` cardSeparator
            -- es <- sepByEndBy card (char '\n') (try (char '\n') <|> (eof >> return '\n'))
          ; return VCF { cards = es }
          }
