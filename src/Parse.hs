@@ -163,7 +163,7 @@ uri = do { uri <- many1 uriChar
 -- URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/
 urlField1 :: GenParser Char st Field
 urlField1 = do { string "URL;"
-               ; attrs <- many complexAttribute
+               ; attrs <- complexAttribute `sepBy` char ';'
                ; char ':'
                ; urival <- uri
                ; return URIField { attributes = attrs, uriStr = urival }
@@ -189,14 +189,16 @@ urlField = urlField1 <|> urlField2
 data Field = Field { pangalan :: String, attributes :: [Attribute] }
            | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
 
+fields :: [Attribute] -> Value
+fields [] = Null
+-- Do not embed a single value in Array constructor
+fields [a] = toJSON a
+fields as  = Array (fromList (map oneField as))
+
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack p, fields as)]
-    where fields :: [Attribute] -> Value
-          fields [] = Null
-          -- Do not embed a single value in Array constructor
-          fields [a] = toJSON a
-          fields as  = Array (fromList (map oneField as))
-
+  toJSON (URIField { attributes = as, uriStr = u }) = object [(T.pack u, fields as)]
+  
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
 lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
@@ -272,16 +274,16 @@ openCard = string "BEGIN:VCARD" >> eol >> return ()
 closeCard = string "END:VCARD" >> return ()
 
 -- An card consists of one or more fields.
-data Card = Card { fields :: [Field] } deriving (Show, Generic)
+data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 
 instance ToJSON Card where
-  toJSON (Card {fields = fs}) = object [ "fields" .= toJSON fs ]
+  toJSON (Card {fieldz = fs}) = object [ "fields" .= toJSON fs ]
 
 -- Parse an card.
 card :: GenParser Char st Card
 card = do { openCard
           ; fs <- field `manyTill` (try closeCard)
-          ; return Card { fields = fs }
+          ; return Card { fieldz = fs }
           }
 
 -- A VCF file is a list of cards.
