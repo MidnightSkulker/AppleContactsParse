@@ -66,3 +66,6 @@ spec = do
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
       jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"URL\":[{\"URL\":\"mychart.tpcllp.com/MyChart/\"},{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"
+
+    it "item1.URL;type=pref:www.firststudentinc.com" $
+      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"URL\":[{\"URL\":\"www.firststudentinc.com\"},{\"type\":\"pref\"}]}"
