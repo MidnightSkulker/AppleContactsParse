@@ -173,6 +173,7 @@ urlField = do { optional itemPrefix
 data Field = Field { pangalan :: String, attributes :: [Attribute] }
            | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
 
+-- Encode Fields as JSONx
 fields :: [Attribute] -> Value
 fields [] = Null
 -- Do not embed a single value in Array constructor
@@ -228,15 +229,17 @@ simpleField = do { a <- attributeName
 
 -- Parse a field that may have continuation lines.
 field :: GenParser Char st Field
-field = do { s <- simpleField
-           ; cs <- continuations
-           ; return (addContinuation cs s)
-           }
+field = urlField <|> nonUrlField
   where -- Add the continuation data to the field being parsed.
         addContinuation :: [String] -> Field -> Field
         addContinuation [] f = f
         addContinuation ss f | noAttributes f = addSimpleAttribute f (concat ss)
         addContinuation ss f = updateLastAttribute f (extendLastAttribute ss)
+        nonUrlField :: GenParser Char st Field
+        nonUrlField =  do { s <- simpleField
+                          ; cs <- continuations
+                          ; return (addContinuation cs s)
+                          }
 
 -- Some fields (e.g. PHOTO), have continuation lines for lots of data.
 -- Apparently this are indicated by a leading blank
