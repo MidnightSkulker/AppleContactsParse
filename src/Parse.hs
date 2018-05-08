@@ -157,33 +157,17 @@ uri = do { uri <- many1 uriChar
          ; return uri
          }
 
--- These definitions are for URL fields
-
--- For URLs like this
--- URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/
-urlField1 :: GenParser Char st Field
-urlField1 = do { string "URL;"
-               ; attrs <- complexAttribute `sepBy` char ';'
-               ; char ':'
-               ; urival <- uri
-               ; return URIField { attributes = attrs, uriStr = urival }
-               }
-
--- For URLs like this
--- item1.URL;type=pref:www.happypanda.com
-urlField2 :: GenParser Char st Field
-urlField2 = do { string "item"
-               ; n <- number
-               ; string ".URL;"
-               ; attrs <- many complexAttribute
-               ; char ':'
-               ; urival <- uri
-               ; return URIField { attributes = attrs, uriStr = urival }
-               }
-
--- For all the URLs we know about so far
+-- Parser for URL fields
 urlField :: GenParser Char st Field
-urlField = urlField1 <|> urlField2
+urlField = do { optional itemPrefix
+              ; string "URL;"
+              ; attrs <- complexAttribute `sepBy` char ';'
+              ; char ':'
+              ; urival <- uri
+              ; return URIField { attributes = ComplexAttribute{name = "URL", value = urival}:attrs, uriStr = urival }
+              }
+  where itemPrefix :: GenParser Char st ()
+        itemPrefix = string "item" >> number >> char '.' >> return ()
 
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] }
@@ -197,7 +181,7 @@ fields as  = Array (fromList (map oneField as))
 
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack p, fields as)]
-  toJSON (URIField { attributes = as, uriStr = u }) = object [(T.pack u, fields as)]
+  toJSON (URIField { attributes = as, uriStr = u }) = object [(T.pack "URL", fields as)]
   
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
