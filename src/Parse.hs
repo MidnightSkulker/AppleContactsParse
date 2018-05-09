@@ -148,7 +148,7 @@ attribute = try complexAttribute <|> simpleAttribute
 
 -- URI Characters
 uriChar :: GenParser Char st Char
-uriChar = satisfy isAlphaNum <|> oneOf("-._~:/?#[]@!$&'()*+,;=")
+uriChar = satisfy isAlphaNum <|> oneOf("-._~:/?#[]@!$&'()%*+,;=")
 
 -- URI Parser
 uri :: GenParser Char st String

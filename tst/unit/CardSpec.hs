@@ -71,11 +71,5 @@ spec = do
       jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"URL\":[{\"URL\":\"www.firststudentinc.com\"},{\"type\":\"pref\"}]}"
 
     it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
-      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening\"},{\"type\":\"pref\"}]}"
-
-    it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
-      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\n" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening\"},{\"type\":\"pref\"}]}"
-
-    it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
-      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "junk"
+      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\"},{\"type\":\"pref\"}]}"
 
