@@ -163,8 +163,15 @@ urlField = do { optional itemPrefix
               ; string "URL;"
               ; attrs <- complexAttribute `sepBy` char ';'
               ; char ':'
-              ; urival <- uri
-              ; return URIField { attributes = ComplexAttribute{name = "URL", value = urival}:attrs, uriStr = urival }
+              ; muri <- optionMaybe uri
+              ; return (
+                  case muri of
+                    Nothing -> URIField {
+                      attributes = attrs,
+                      uriStr = "Invalid URI in Address Book" }
+                    Just urival -> URIField {
+                      attributes = ComplexAttribute { name = "URL", value = urival}:attrs,
+                      uriStr = urival } )
               }
   where itemPrefix :: GenParser Char st ()
         itemPrefix = string "item" >> number >> char '.' >> return ()
@@ -229,7 +236,7 @@ simpleField = do { a <- attributeName
 
 -- Parse a field that may have continuation lines.
 field :: GenParser Char st Field
-field = urlField <|> nonUrlField
+field = try urlField <|> nonUrlField
   where -- Add the continuation data to the field being parsed.
         addContinuation :: [String] -> Field -> Field
         addContinuation [] f = f

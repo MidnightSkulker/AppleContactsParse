@@ -31,13 +31,13 @@ spec = do
       jsonTest field "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n" `shouldBe` "{\"PRODID\":\"-//Apple Inc.//Mac OS X 10.13.4//EN\"}"
 
     it ":kdkdk\n" $ -- Should fail (left "(unknown)")
-      jsonTest field ":kdkdk\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \":\""
+      jsonTest field ":kdkdk\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \":\"\nexpecting \"item\" or \"URL;\""
 
     it "ORG:Macys;\n" $
       jsonTest field "ORG:Macys;\n" `shouldBe` "{\"ORG\":[\"Macys\",\"\"]}"
 
     it "\n" $ -- Should fail, empty line not allowed
-      jsonTest field "\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\""
+      jsonTest field "\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
 
     it "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" $
       jsonTest field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" `shouldBe` "{\"TEL\":[{\"type\":\"CELL\"},{\"type\":\"VOICE\"},{\"type\":\"pref\"},\"15036451141\"]}"
@@ -50,7 +50,7 @@ spec = do
       jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":{\"Continuation\":\"Macys--mcmcmcmc\"}}"
 
     it "\n mcmcmcmc\n" $
-      jsonTest field "\n mcmcmcmc\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\""
+      jsonTest field "\n mcmcmcmc\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" $
       jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}"
@@ -69,3 +69,10 @@ spec = do
 
     it "item1.URL;type=pref:www.firststudentinc.com" $
       jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"URL\":[{\"URL\":\"www.firststudentinc.com\"},{\"type\":\"pref\"}]}"
+
+    it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
+      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening\"},{\"type\":\"pref\"}]}"
+
+    it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
+      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\n" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening\"},{\"type\":\"pref\"}]}"
+
