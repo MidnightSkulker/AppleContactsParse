@@ -90,8 +90,8 @@ number = many1 (satisfy isNumber)
 
 -- The end of line character is \n, but for some reason Apple has chosen
 -- to use "\r\n" for these .vcf files
-eol :: GenParser Char st String
-eol = many (oneOf "\r\n")
+eol :: GenParser Char st ()
+eol = many (oneOf "\r\n") >> return ()
 
 -- The following definitions for attributes are for the vast majority of
 -- fields. They do not work for URL fields.
@@ -178,7 +178,8 @@ urlField = do { optional itemPrefix
 
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] }
-           | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
+           | URIField { attributes :: [Attribute], uriStr :: String }
+           | EmptyField deriving (Show, Generic)
 
 -- Encode Fields as JSONx
 fields :: [Attribute] -> Value
@@ -247,6 +248,8 @@ field = try urlField <|> nonUrlField
                           ; cs <- continuations
                           ; return (addContinuation cs s)
                           }
+        emptyField :: GenParser Char st Field
+        emptyField = eol >> return EmptyField
 
 -- Some fields (e.g. PHOTO), have continuation lines for lots of data.
 -- Apparently this are indicated by a leading blank
@@ -295,11 +298,10 @@ instance ToJSON VCF where
 -- <Sob>, card separator must handle DOS end of line, even though this is
 -- an Apple product.
 cardSeparator :: GenParser Char st ()
-cardSeparator = (char '\n' >> return ()) <|> (string "\r\n" >> return ())
+cardSeparator = eol -- (char '\n' >> return ()) <|> (string "\r\n" >> return ())
 
 vcf :: GenParser Char st VCF
 vcf = do { es <- card `sepBy` cardSeparator
-           -- es <- sepByEndBy card (char '\n') (try (char '\n') <|> (eof >> return '\n'))
          ; return VCF { cards = es }
          }
 
