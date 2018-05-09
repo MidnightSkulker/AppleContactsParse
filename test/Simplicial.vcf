@@ -1,0 +1,19 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN
+N:;;;;
+FN:Simplicial Sets
+ORG:Simplicial Sets;
+item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf
+item1.X-ABLabel:Ref1
+item2.URL:slideplayer.com/slide/1379103/
+item2.X-ABLabel:Ref2
+item3.URL:pdfs.semanticscholar.org/506f/fcfd46eeb4e2aa4a9ce176ef9ea048c187bc.pdf
+item3.X-ABLabel:Ref3
+item4.URL:www.math.jhu.edu/~eriehl/ssets.pdf
+item4.X-ABLabel:Leisurely Introduction
+X-ABShowAs:COMPANY
+CATEGORIES:card
+UID:0981dbd6-899a-42ca-9eb0-edf8e89a30cc
+X-ABUID:0C262FF0-9535-49B0-8E6A-71F7F7038F85:ABPerson
+END:VCARD
