@@ -295,25 +295,8 @@ instance ToJSON VCF where
 -- or just
 -- END:VCARD
 
--- <Sob>, card separator must handle DOS end of line, even though this is
--- an Apple product.
-cardSeparator :: GenParser Char st ()
-cardSeparator = eol -- (char '\n' >> return ()) <|> (string "\r\n" >> return ())
-
 vcf :: GenParser Char st VCF
-vcf = do { es <- card `sepBy` cardSeparator
+vcf = do { es <- card `sepEndBy` eol
+         ; eof
          ; return VCF { cards = es }
          }
-
--- For testing
-aa = ComplexAttribute "a" "1"
-oa = object [(T.pack "a", String "1")]
-ab = ComplexAttribute "b" "2"
-ob = object [(T.pack "b", String "2")]
-ac = ComplexAttribute "c" "3"
-oc = object [(T.pack "c", String "3")]
-f1 = Field { pangalan = "f", attributes = [aa,ab,ac] }
-aabc = [aa, ab, ac]
-oabc1 = Array (fromList (map oneField [aa,ab,ac]))
-oabc2 = Array (fromList [oa,ob,oc])
-ofield = object [(T.pack "fields", oabc1)]
