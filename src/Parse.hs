@@ -133,12 +133,12 @@ simpleAttribute = do { n <- attributeValue
                      ; return SimpleAttribute { name = n } }
 -- An attribute name must be non-empty
 attributeName :: GenParser Char st String
-attributeName = many1 (noneOf "=:;\n")
+attributeName = many1 (noneOf "=:;\r\n")
 
 -- An attribute value can be empty, as in this example: "N:;;;;;", thus
 -- we parse with 'many', not 'many1'.
 attributeValue :: GenParser Char st String
-attributeValue = many (noneOf "=:;\n")
+attributeValue = many (noneOf "=:;\r\n")
 
 -- Parse an attribute.
 attribute :: GenParser Char st Attribute
