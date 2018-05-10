@@ -1,0 +1,5 @@
+#!/bin/bash
+set -v
+osascript backupAddressBook.scpt
+mv all.vcf ARCHIVE
+ls -l ARCHIVE/all.vcf
