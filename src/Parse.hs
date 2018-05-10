@@ -7,15 +7,13 @@ module Parse where
 
 import System.IO (readFile)
 import Text.ParserCombinators.Parsec
-import GHC.Generics
+import GHC.Generics (Generic)
 import Data.Monoid ((<>))
-import Data.Either
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, decode, KeyValue, Value(..), foldable, Value, Encoding, Series)
+import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(..))
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
 import Data.Text as T (pack, Text)
 import Data.Char (isAlphaNum, isNumber)
 import GHC.Exts (fromList)
-import Network.URI
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -290,6 +288,7 @@ instance ToJSON VCF where
   toJSON (VCF { cards = es}) = object [ "cards" .= toJSON es ]
 
 -- Parse a VCF File.
+-- Apple Contacts likes to end these files without the last eol
 -- We allow the file to end with a \n, or not. So the last line can be either
 -- END:VCARD\n
 -- or just
