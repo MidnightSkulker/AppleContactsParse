@@ -56,13 +56,13 @@ spec = do
       jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}"
 
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]},{\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}},{\"NOTE\":\"Has Immunization Record\"}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]},{\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}},{\"NOTE\":\"Has Immunization Record\"}]}]"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]}]}]"
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "{\"cards\":[{\"fields\":[{\"ORG\":\"Macys\"}]},{\"fields\":[{\"ORG\":\"Target\"}]}]}"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":\"Macys\"}]},{\"fields\":[{\"ORG\":\"Target\"}]}]"
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
       jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"URL\":[{\"URL\":\"mychart.tpcllp.com/MyChart/\"},{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"
@@ -72,4 +72,3 @@ spec = do
 
     it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
       jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\"},{\"type\":\"pref\"}]}"
-
