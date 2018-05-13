@@ -285,7 +285,7 @@ card = do { openCard
 data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
 
 instance ToJSON VCF where
-  toJSON (VCF { cards = es}) = toJSON es
+  toJSON = toJSON . cards
 
 -- Parse a VCF File.
 -- Apple Contacts likes to end these files without the last eol
