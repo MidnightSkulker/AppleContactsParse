@@ -9,7 +9,7 @@ import System.IO (readFile)
 import Text.ParserCombinators.Parsec
 import GHC.Generics (Generic)
 import Data.Monoid ((<>))
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(..))
+import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(..), KeyValue(..), toJSONList)
 import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
 import Data.Text as T (pack, Text)
 import Data.Char (isAlphaNum, isNumber)
@@ -98,6 +98,12 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
                | NoAttribute deriving (Show, Generic)
 
+-- Convert an attribute to a pair
+toPair :: Attribute -> (String, String)
+toPair ComplexAttribute { name = n, value = v } = (n, v)
+toPair SimpleAttribute { name = n } = (n, "NoValue")
+toPair NoAttribute = ( "NoName", "NoValue" )
+
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
 oneField ComplexAttribute { name = n, value = v } =
@@ -106,6 +112,29 @@ oneField ComplexAttribute { name = n, value = v } =
   else object [(T.pack n, String (T.pack v))]
 oneField SimpleAttribute { name = n } = String (T.pack n)
 oneField NoAttribute = Null
+
+aa = ComplexAttribute "a" "1"
+av = oneField aa
+ao = object [T.pack "a" .= (1 :: Integer)]
+ba = ComplexAttribute "b" "2"
+bv = oneField ba
+bo = object [T.pack "b" .= (2 :: Integer)]
+ca = ComplexAttribute "c" "3"
+abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
+abv1 = [av, bv]
+abv2 = object [T.pack "a" .= String "1", T.pack "b" .= String "2"]
+fromPair :: KeyValue kv => (String, Integer) -> kv
+fromPair (s,i) = (T.pack s .= i)
+abv3 = object (map fromPair [("a", 1), ("b", 2)])
+fromPair2 :: KeyValue kv => (String, String) -> kv
+fromPair2 (s,t) = (T.pack s .= t)
+abv4 = object (map fromPair2 [("a", "1"), ("b", "2"), ("c","")])
+-- Make an object from a list of items that can be paired.
+mkObject :: (a -> (String, String)) -> [a] -> Value
+mkObject toPair = object . map (fromPair . toPair)
+  where fromPair :: KeyValue kv => (String, String) -> kv
+        fromPair (s, t) = (T.pack s .= t)
+t1 = mkObject toPair [aa, ba, ca]
 
 -- How to encode / decode an Attribute
 instance ToJSON Attribute where
@@ -176,20 +205,19 @@ urlField = do { optional itemPrefix
 
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] }
-           | URIField { attributes :: [Attribute], uriStr :: String }
-           | EmptyField deriving (Show, Generic)
+           | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
 
 -- Encode Fields as JSONx
 fields :: [Attribute] -> Value
 fields [] = Null
 -- Do not embed a single value in Array constructor
 fields [a] = toJSON a
-fields as  = Array (fromList (map oneField as))
+fields as  = toJSON (map oneField as)
 
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object [(T.pack p, fields as)]
-  toJSON (URIField { attributes = as, uriStr = u }) = object [(T.pack "URL", fields as)]
-  
+  toJSON (Field { pangalan = p, attributes = as}) = object [T.pack p .= fields as]
+  toJSON (URIField { attributes = as, uriStr = u }) = object [T.pack "URL" .= fields as]
+
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
 lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
@@ -246,8 +274,6 @@ field = try urlField <|> nonUrlField
                           ; cs <- continuations
                           ; return (addContinuation cs s)
                           }
-        emptyField :: GenParser Char st Field
-        emptyField = eol >> return EmptyField
 
 -- Some fields (e.g. PHOTO), have continuation lines for lots of data.
 -- Apparently this are indicated by a leading blank
@@ -256,7 +282,8 @@ continuation :: GenParser Char st String
 continuation = do { blank
                   ; a <- many (satisfy okJpgChar)
                   ; _ <- eol
-                  ; return a }
+                  ; return a
+                  }
   where okJpgChar :: Char -> Bool
         okJpgChar c = isAlphaNum c || c == '/' || c == '+' || c == '='
 
@@ -264,6 +291,7 @@ continuations :: GenParser Char st [String]
 continuations = many continuation
 
 -- Open and close of an card.
+-- Note that the parse does not consume the line return after "END:VCARD", if there is one.
 openCard, closeCard :: GenParser Char st ()
 openCard = string "BEGIN:VCARD" >> eol >> return ()
 closeCard = string "END:VCARD" >> return ()
@@ -272,7 +300,7 @@ closeCard = string "END:VCARD" >> return ()
 data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 
 instance ToJSON Card where
-  toJSON (Card {fieldz = fs}) = object [ "fields" .= toJSON fs ]
+  toJSON (Card {fieldz = fs}) = object [ "fields" .= (map toJSON fs :: [Value]) ]
 
 -- Parse an card.
 card :: GenParser Char st Card
