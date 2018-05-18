@@ -25,7 +25,8 @@ executable AppleContactsParse
                        parseargs,
                        aeson,
                        network-uri,
-                       text
+                       text,
+                       MissingH
 
 test-suite unit-tests
   type:                exitcode-stdio-1.0
@@ -39,4 +40,5 @@ test-suite unit-tests
                        bytestring,
                        aeson,
                        network-uri,
-                       text
+                       text,
+                       MissingH

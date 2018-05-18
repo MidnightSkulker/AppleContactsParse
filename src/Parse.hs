@@ -113,28 +113,13 @@ oneField ComplexAttribute { name = n, value = v } =
 oneField SimpleAttribute { name = n } = String (T.pack n)
 oneField NoAttribute = Null
 
-aa = ComplexAttribute "a" "1"
-av = oneField aa
-ao = object [T.pack "a" .= (1 :: Integer)]
-ba = ComplexAttribute "b" "2"
-bv = oneField ba
-bo = object [T.pack "b" .= (2 :: Integer)]
-ca = ComplexAttribute "c" "3"
-abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
-abv1 = [av, bv]
-abv2 = object [T.pack "a" .= String "1", T.pack "b" .= String "2"]
-fromPair :: KeyValue kv => (String, Integer) -> kv
-fromPair (s,i) = (T.pack s .= i)
-abv3 = object (map fromPair [("a", 1), ("b", 2)])
-fromPair2 :: KeyValue kv => (String, String) -> kv
-fromPair2 (s,t) = (T.pack s .= t)
-abv4 = object (map fromPair2 [("a", "1"), ("b", "2"), ("c","")])
+fromPair :: KeyValue kv => (String, String) -> kv
+fromPair (s,t) = T.pack s .= t
 -- Make an object from a list of items that can be paired.
-mkObject :: (a -> (String, String)) -> [a] -> Value
-mkObject toPair = object . map (fromPair . toPair)
+mkObjectFromAttributes :: (a -> (String, String)) -> [a] -> Value
+mkObjectFromAttributes toPair = object . map (fromPair . toPair)
   where fromPair :: KeyValue kv => (String, String) -> kv
         fromPair (s, t) = (T.pack s .= t)
-t1 = mkObject toPair [aa, ba, ca]
 
 -- How to encode / decode an Attribute
 instance ToJSON Attribute where
@@ -207,6 +192,15 @@ urlField = do { optional itemPrefix
 data Field = Field { pangalan :: String, attributes :: [Attribute] }
            | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
 
+fieldToJSON :: KeyValue kv => Field -> kv
+fieldToJSON Field { pangalan = p, attributes = as } =
+  T.pack p .= mkObjectFromAttributes toPair as
+
+-- Extract the name of a field.
+fieldName :: Field -> String
+fieldName Field { pangalan = p, attributes = as } = p
+fieldName URIField { uriStr = u, attributes = as } = u
+
 -- Encode Fields as JSONx
 fields :: [Attribute] -> Value
 fields [] = Null
@@ -214,6 +208,7 @@ fields [] = Null
 fields [a] = toJSON a
 fields as  = toJSON (map oneField as)
 
+-- FIX: Generate list of a .= b ******
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [T.pack p .= fields as]
   toJSON (URIField { attributes = as, uriStr = u }) = object [T.pack "URL" .= fields as]
@@ -299,6 +294,16 @@ closeCard = string "END:VCARD" >> return ()
 -- An card consists of one or more fields.
 data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 
+-- mkObjectFromFields :: (Field -> (String, String)) -> [Field] -> Value
+-- mkObjectFromFields toPair fields = object [ map (fromPair . fieldToPair) fields ]
+--   where fromPair :: KeyValue kv => (String, String) -> kv
+--         fromPair (s, t) = (T.pack s .= t)
+--         fieldToPair :: KeyValue kv => Field -> kv
+--         fieldToPair f = (T.pack (fieldName f) .= mkObjectFromAttributes toPair (attributes f
+
+-- Fullname Order: Last, First, Middle, Prefix, Suffix
+
+-- Need to turn Field into list of a .= b *******
 instance ToJSON Card where
   toJSON (Card {fieldz = fs}) = object [ "fields" .= (map toJSON fs :: [Value]) ]
 
