@@ -42,6 +42,6 @@ abv1 = [av, bv]
 abv2 = object [T.pack "a" .= "1", T.pack "b" .= "2"]
 abv4 = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
 
-attrs1 = mkObjectFromAttributes toPair [aa, ba, ca]
+attrs1 = mkObjectFromPairable toPair [aa, ba, ca]
 
 card1 = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"

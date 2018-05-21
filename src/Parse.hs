@@ -99,10 +99,10 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
                | NoAttribute deriving (Show, Generic)
 
 -- Convert an attribute to a pair
-toPair :: Attribute -> (String, String)
-toPair ComplexAttribute { name = n, value = v } = (n, v)
-toPair SimpleAttribute { name = n } = (n, "NoValue")
-toPair NoAttribute = ( "NoName", "NoValue" )
+toPair :: Attribute -> (String, Value)
+toPair ComplexAttribute { name = n, value = v } = (n, String (T.pack v))
+toPair SimpleAttribute { name = n } = (n, String "NoValue")
+toPair NoAttribute = ( "NoName", String "NoValue" )
 
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
@@ -116,9 +116,9 @@ oneField NoAttribute = Null
 fromPair :: KeyValue kv => (String, String) -> kv
 fromPair (s,t) = T.pack s .= t
 -- Make an object from a list of items that can be paired.
-mkObjectFromAttributes :: (a -> (String, String)) -> [a] -> Value
-mkObjectFromAttributes toPair = object . map (fromPair . toPair)
-  where fromPair :: KeyValue kv => (String, String) -> kv
+mkObjectFromPairable :: (a -> (String, Value)) -> [a] -> Value
+mkObjectFromPairable toPair = object . map (fromPair . toPair)
+  where fromPair :: KeyValue kv => (String, Value) -> kv
         fromPair (s, t) = (T.pack s .= t)
 
 -- How to encode / decode an Attribute
@@ -186,9 +186,11 @@ urlField = do { optional itemPrefix
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show, Generic)
 
+-- fieldToPair :: Field -> (String, Field { pangalan = p, attributes = attrs }
+
 fieldToJSON :: KeyValue kv => Field -> kv
 fieldToJSON Field { pangalan = p, attributes = as } =
-  T.pack p .= mkObjectFromAttributes toPair as
+  T.pack p .= mkObjectFromPairable toPair as
 
 -- Encode Fields as JSONx
 fields :: [Attribute] -> Value
@@ -287,7 +289,7 @@ data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 --   where fromPair :: KeyValue kv => (String, String) -> kv
 --         fromPair (s, t) = (T.pack s .= t)
 --         fieldToPair :: KeyValue kv => Field -> kv
---         fieldToPair f = (T.pack (fieldName f) .= mkObjectFromAttributes toPair (attributes f
+--         fieldToPair f = (T.pack (fieldName f) .= mkObjectFromPairable toPair (attributes f
 
 -- Fullname Order: Last, First, Middle, Prefix, Suffix
 
