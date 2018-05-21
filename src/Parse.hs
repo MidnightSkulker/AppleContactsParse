@@ -176,30 +176,19 @@ urlField = do { optional itemPrefix
               ; attrs <- complexAttribute `sepBy` char ';'
               ; char ':'
               ; muri <- optionMaybe uri
-              ; return (
-                  case muri of
-                    Nothing -> URIField {
-                      attributes = attrs,
-                      uriStr = "Invalid URI in Address Book" }
-                    Just urival -> URIField {
-                      attributes = ComplexAttribute { name = "URL", value = urival}:attrs,
-                      uriStr = urival } )
+              ; case muri of
+                  Nothing -> return Field { pangalan = "Invalid URI in Address Book" , attributes = attrs }
+                  Just urival -> return Field { pangalan = urival, attributes = attrs }
               }
   where itemPrefix :: GenParser Char st ()
         itemPrefix = string "item" >> number >> char '.' >> return ()
 
 -- A field has a name, and a list of attributes.
-data Field = Field { pangalan :: String, attributes :: [Attribute] }
-           | URIField { attributes :: [Attribute], uriStr :: String } deriving (Show, Generic)
+data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show, Generic)
 
 fieldToJSON :: KeyValue kv => Field -> kv
 fieldToJSON Field { pangalan = p, attributes = as } =
   T.pack p .= mkObjectFromAttributes toPair as
-
--- Extract the name of a field.
-fieldName :: Field -> String
-fieldName Field { pangalan = p, attributes = as } = p
-fieldName URIField { uriStr = u, attributes = as } = u
 
 -- Encode Fields as JSONx
 fields :: [Attribute] -> Value
@@ -211,7 +200,6 @@ fields as  = toJSON (map oneField as)
 -- FIX: Generate list of a .= b ******
 instance ToJSON Field where
   toJSON (Field { pangalan = p, attributes = as}) = object [T.pack p .= fields as]
-  toJSON (URIField { attributes = as, uriStr = u }) = object [T.pack "URL" .= fields as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute

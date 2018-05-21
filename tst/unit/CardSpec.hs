@@ -65,10 +65,10 @@ spec = do
       jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":\"Macys\"}]},{\"fields\":[{\"ORG\":\"Target\"}]}]"
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
-      jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"URL\":[{\"URL\":\"mychart.tpcllp.com/MyChart/\"},{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"
+      jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":[{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"
 
     it "item1.URL;type=pref:www.firststudentinc.com" $
-      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"URL\":[{\"URL\":\"www.firststudentinc.com\"},{\"type\":\"pref\"}]}"
+      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"www.firststudentinc.com\":{\"type\":\"pref\"}}"
 
     it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
-      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"URL\":[{\"URL\":\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\"},{\"type\":\"pref\"}]}"
+      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\":{\"type\":\"pref\"}}"
