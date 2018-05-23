@@ -292,15 +292,11 @@ data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 
 -- Fullname Order: Last, First, Middle, Prefix, Suffix
 
-cardToJSON :: Card -> Value
-cardToJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
-  where fieldToPair :: Field -> (String, Value)
-        fieldToPair f@Field { pangalan = p, attributes = as } =
-          (p, mkObjectFromPairable attributeToPair as)
-  
 instance ToJSON Card where
-  toJSON = cardToJSON
---  toJSON (Card {fieldz = fs}) = object [ "fields" .= (map toJSON fs :: [Value]) ]
+  toJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
+    where fieldToPair :: Field -> (String, Value)
+          fieldToPair f@Field { pangalan = p, attributes = as } =
+            (p, mkObjectFromPairable attributeToPair as)
 
 -- Parse an card.
 card :: GenParser Char st Card
