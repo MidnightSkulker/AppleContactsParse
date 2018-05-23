@@ -99,10 +99,10 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
                | NoAttribute deriving (Show, Generic)
 
 -- Convert an attribute to a pair
-toPair :: Attribute -> (String, Value)
-toPair ComplexAttribute { name = n, value = v } = (n, String (T.pack v))
-toPair SimpleAttribute { name = n } = (n, String "NoValue")
-toPair NoAttribute = ( "NoName", String "NoValue" )
+attributeToPair :: Attribute -> (String, Value)
+attributeToPair ComplexAttribute { name = n, value = v } = ( n, String (T.pack v) )
+attributeToPair SimpleAttribute { name = n } = ( n, Null )
+attributeToPair NoAttribute = ( "NoValue", Null )
 
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
@@ -188,10 +188,6 @@ data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (S
 
 -- fieldToPair :: Field -> (String, Field { pangalan = p, attributes = attrs }
 
-fieldToJSON :: KeyValue kv => Field -> kv
-fieldToJSON Field { pangalan = p, attributes = as } =
-  T.pack p .= mkObjectFromPairable toPair as
-
 -- Encode Fields as JSONx
 fields :: [Attribute] -> Value
 fields [] = Null
@@ -199,9 +195,12 @@ fields [] = Null
 fields [a] = toJSON a
 fields as  = toJSON (map oneField as)
 
--- FIX: Generate list of a .= b ******
+fieldToJSON :: KeyValue kv => Field -> kv
+fieldToJSON Field { pangalan = p, attributes = as } =
+  T.pack p .= mkObjectFromPairable attributeToPair as
+
 instance ToJSON Field where
-  toJSON (Field { pangalan = p, attributes = as}) = object [T.pack p .= fields as]
+  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
@@ -293,7 +292,12 @@ data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 
 -- Fullname Order: Last, First, Middle, Prefix, Suffix
 
--- Need to turn Field into list of a .= b *******
+cardToJSON :: Card -> Value
+cardToJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
+  where fieldToPair :: Field -> (String, Value)
+        fieldToPair f@Field { pangalan = p, attributes = as } =
+          (p, mkObjectFromPairable attributeToPair as)
+  
 instance ToJSON Card where
   toJSON (Card {fieldz = fs}) = object [ "fields" .= (map toJSON fs :: [Value]) ]
 

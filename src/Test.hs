@@ -37,11 +37,17 @@ bv = oneField ba
 bo = object [T.pack "b" .= (2 :: Integer)]
 ca = ComplexAttribute "c" "3"
 f1 = Field { pangalan = "f1", attributes = [aa, ba, ca] }
+f2 = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
 abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
 abv1 = [av, bv]
 abv2 = object [T.pack "a" .= "1", T.pack "b" .= "2"]
 abv4 = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
+f3 = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
+-- Because aeson uses a hashmap, it will only record one attribute with
+-- the same key.
+f4 = Field { pangalan = "iii", attributes = [aa, aa, aa] }
 
-attrs1 = mkObjectFromPairable toPair [aa, ba, ca]
+attrs1 = mkObjectFromPairable attributeToPair [aa, ba, ca]
 
 card1 = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
+
