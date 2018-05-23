@@ -299,7 +299,8 @@ cardToJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fiel
           (p, mkObjectFromPairable attributeToPair as)
   
 instance ToJSON Card where
-  toJSON (Card {fieldz = fs}) = object [ "fields" .= (map toJSON fs :: [Value]) ]
+  toJSON = cardToJSON
+--  toJSON (Card {fieldz = fs}) = object [ "fields" .= (map toJSON fs :: [Value]) ]
 
 -- Parse an card.
 card :: GenParser Char st Card
