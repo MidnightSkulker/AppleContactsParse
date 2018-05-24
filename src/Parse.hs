@@ -200,7 +200,8 @@ fieldToJSON Field { pangalan = p, attributes = as } =
   T.pack p .= mkObjectFromPairable attributeToPair as
 
 instance ToJSON Field where
-  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
+--  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
+  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= toJSON as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
