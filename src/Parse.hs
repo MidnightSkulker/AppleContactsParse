@@ -109,7 +109,7 @@ oneField :: Attribute -> Value
 oneField ComplexAttribute { name = n, value = v } =
   if v == ""
   then String (T.pack n)
-  else object [(T.pack n, String (T.pack v))]
+  else object [T.pack n .= String (T.pack v)]
 oneField SimpleAttribute { name = n } = String (T.pack n)
 oneField NoAttribute = Null
 
@@ -200,8 +200,8 @@ fieldToJSON Field { pangalan = p, attributes = as } =
   T.pack p .= mkObjectFromPairable attributeToPair as
 
 instance ToJSON Field where
---  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
   toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= toJSON as]
+  --  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
@@ -297,7 +297,11 @@ instance ToJSON Card where
   toJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
     where fieldToPair :: Field -> (String, Value)
           fieldToPair f@Field { pangalan = p, attributes = as } =
-            (p, mkObjectFromPairable attributeToPair as)
+            case as of
+              [] -> (p, Null)
+              [a] -> (p, oneField a)
+              as -> (p, toJSON as)
+--            (p, mkObjectFromPairable attributeToPair as)
 
 -- Parse an card.
 card :: GenParser Char st Card

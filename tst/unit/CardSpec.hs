@@ -44,31 +44,32 @@ spec = do
 
       
     it "ORG:Macys;\n -kdkdkdkd\n" $
-      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":{\"Macys\":null,\"Continuation\":\"\"}}"
+      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"Continuation\"]}"
 
     it "ORG:Macys--\n mcmcmcmc\n" $
-      jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":{\"Continuation\":\"Macys--mcmcmcmc\"}}"
+      jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":[{\"Continuation\":\"Macys--mcmcmcmc\"}]}"
 
     it "\n mcmcmcmc\n" $
       jsonTest field "\n mcmcmcmc\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" $
-      jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":[{\"ORG\":{\"\":null,\"Macys\":null}}]}"
+      jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
 
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":[\"Macys\",\"\"]},{\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}},{\"NOTE\":\"Has Immunization Record\"}]}]"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}}}]"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":{\"\":null,\"Macys\":null}}]}]"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}}]"
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":{\"Macys\":null}}},{\"fields\":{\"ORG\":{\"Target\":null}}}]"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}},{\"fields\":{\"ORG\":\"Target\"}}]"
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
-      jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":{\"type\":\"pref\"}}"
+      jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":[{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"
 
     it "item1.URL;type=pref:www.firststudentinc.com" $
-      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"www.firststudentinc.com\":{\"type\":\"pref\"}}"
+      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"www.firststudentinc.com\":[{\"type\":\"pref\"}]}"
 
     it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
-      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\":{\"type\":\"pref\"}}"
+      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\":[{\"type\":\"pref\"}]}"
+
