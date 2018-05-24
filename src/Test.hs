@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Test where
 
 import Data.Aeson as Aeson (ToJSON(..), encode)
@@ -20,34 +21,34 @@ jsonTest p s = either show (DBLC8.unpack . encode) (test p s)
 parsTest :: (ToJSON a) => GenParser Char () a -> String -> a
 parsTest p s = fromRight (test p s)
 
-t1 :: String
-t1 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
+t1 :: String = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
 
-t2 :: String
-t2 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
+t2 :: String = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
 
 -- Some Test values
 
 
-aa = ComplexAttribute "a" "1"
-av = oneField aa
-ao = object [T.pack "a" .= (1 :: Integer)]
-ba = ComplexAttribute "b" "2"
-bv = oneField ba
-bo = object [T.pack "b" .= (2 :: Integer)]
-ca = ComplexAttribute "c" "3"
-f1 = Field { pangalan = "f1", attributes = [aa, ba, ca] }
-f2 = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
-abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
-abv1 = [av, bv]
-abv2 = object [T.pack "a" .= "1", T.pack "b" .= "2"]
-abv4 = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
-f3 = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
+aa :: Attribute = ComplexAttribute "a" "1"
+av :: Value = oneField aa
+ao :: Value = object [T.pack "a" .= (1 :: Integer)]
+ba :: Attribute = ComplexAttribute "b" "2"
+bv :: Value = oneField ba
+bo :: Value = object [T.pack "b" .= (2 :: Integer)]
+ca :: Attribute = ComplexAttribute "c" "3"
+attrs1 :: [Attribute] = [aa, ba, ca]
+
+f1 :: Field = Field { pangalan = "f1", attributes = attrs1 }
+f2 :: Field = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
+abo :: Value = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
+abv1 :: [Value] = [av, bv]
+abv2 :: Value = object [T.pack "a" .= "1", T.pack "b" .= "2"]
+abv4 :: Value = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
+f3 :: Field = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
 -- Because aeson uses a hashmap, it will only record one attribute with
 -- the same key.
-f4 = Field { pangalan = "iii", attributes = [aa, aa, aa] }
+f4 :: Field = Field { pangalan = "iii", attributes = [aa, aa, aa] }
 
-attrs1 = mkObjectFromPairable attributeToPair [aa, ba, ca]
+attrs2 :: Value = mkObjectFromPairable attributeToPair [aa, ba, ca]
 
-card1 = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
+card1 :: Card = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
 

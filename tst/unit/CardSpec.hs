@@ -62,7 +62,7 @@ spec = do
       jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":{\"\":null,\"Macys\":null}}]}]"
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":[{\"ORG\":{\"Macys\":null}}]},{\"fields\":[{\"ORG\":{\"Target\":null}}]}]"
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":{\"Macys\":null}}},{\"fields\":{\"ORG\":{\"Target\":null}}}]"
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
       jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":{\"type\":\"pref\"}}"
