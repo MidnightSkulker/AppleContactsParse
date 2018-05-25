@@ -234,7 +234,7 @@ updateLastAttribute field update =
 extendLastAttribute :: [String] -> Attribute -> Attribute
 extendLastAttribute ss attr =
   case attr of
-    NoAttribute -> ComplexAttribute { name = "Continuation", value = concat ss }
+    NoAttribute -> SimpleAttribute { name = concat ss }
     SimpleAttribute { name = n } -> SimpleAttribute { name = n ++ concat ss }
     ComplexAttribute { name = n, value = v } ->
       ComplexAttribute { name = n, value = v ++ concat ss }
@@ -264,9 +264,9 @@ field = try urlField <|> nonUrlField
         addContinuation ss f | noAttributes f = addSimpleAttribute f (concat ss)
         addContinuation ss f = updateLastAttribute f (extendLastAttribute ss)
         nonUrlField :: GenParser Char st Field
-        nonUrlField =  do { s <- simpleField
+        nonUrlField =  do { f <- simpleField
                           ; cs <- continuations
-                          ; return (addContinuation cs s)
+                          ; return (addContinuation cs f)
                           }
 
 -- Some fields (e.g. PHOTO), have continuation lines for lots of data.
@@ -279,7 +279,8 @@ continuation = do { blank
                   ; return a
                   }
   where okJpgChar :: Char -> Bool
-        okJpgChar c = isAlphaNum c || c == '/' || c == '+' || c == '='
+        okJpgChar c = c /= '\r' && c /= '\n'
+--        okJpgChar c = isAlphaNum c || c == '/' || c == '+' || c == '='
 
 continuations :: GenParser Char st [String]
 continuations = many continuation
@@ -298,7 +299,8 @@ data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 --   where fromPair :: KeyValue kv => (String, String) -> kv
 --         fromPair (s, t) = (T.pack s .= t)
 --         fieldToPair :: KeyValue kv => Field -> kv
---         fieldToPair f = (T.pack (fieldName f) .= mkObjectFromPairable toPair (attributes f
+--         fieldToPair f = (T.pack
+--  (fieldName f) .= mkObjectFromPairable toPair (attributes f
 
 -- Fullname Order: Last, First, Middle, Prefix, Suffix
 

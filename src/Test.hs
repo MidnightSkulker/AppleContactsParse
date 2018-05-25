@@ -47,6 +47,12 @@ f4 :: Field = Field { pangalan = "iii", attributes = [aa, aa, aa] }
 f5 :: Field = parsTest field "ab:\n"
 f5v :: Value =  toJSON f5
 f5e :: ByteString = encode f5v
+f6 :: Field = parsTest field "ORG:Macys;\n"
+f6v :: Value = toJSON f6
+f6e :: ByteString = encode f6v
+f7 :: Field = parsTest field "ORG:Macys-\n kdkdkdkd\n"
+f7v :: Value = toJSON f7
+f7e :: ByteString = encode f7v
 abo :: Value = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
 abv1 :: [Value] = [av, bv]
 abv2 :: Value = object [T.pack "a" .= "1", T.pack "b" .= "2"]
