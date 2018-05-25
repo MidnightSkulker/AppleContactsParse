@@ -15,7 +15,7 @@ gronk = string "gronk"
 spec :: Spec
 spec = do
   describe "jsonTest" $ do
-    it "X-ABUID:4709EC50-7594-4F67-85E1-6870DA65FCBA:ABPerson\n -> junk" $
+    it "X-ABUID:4709EC50-7594-4F67-85E1-6870DsA65FCBA:ABPerson\n -> junk" $
       jsonTest attribute "a=b" `shouldBe` "{\"a\":\"b\"}"
 
     it "ab:\n" $
@@ -68,8 +68,7 @@ spec = do
       jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":[{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"
 
     it "item1.URL;type=pref:www.firststudentinc.com" $
-      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"www.firststudentinc.com\":[{\"type\":\"pref\"}]}"
+      jsonTest urlField "item1.URL;type=pref:www.firststudentinc.com" `shouldBe` "{\"www.firststudentinc.com\":{\"type\":\"pref\"}}"
 
     it "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" $
-      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\":[{\"type\":\"pref\"}]}"
-
+      jsonTest urlField "item1.URL;type=pref:biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf" `shouldBe` "{\"biocircuits.ucsd.edu/nmpinter/Greening%20et%20al%202015%20CZ.pdf\":{\"type\":\"pref\"}}"

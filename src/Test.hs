@@ -39,14 +39,18 @@ attrs1 :: [Attribute] = [aa, ba, ca]
 
 f1 :: Field = Field { pangalan = "f1", attributes = attrs1 }
 f2 :: Field = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
-abo :: Value = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
-abv1 :: [Value] = [av, bv]
-abv2 :: Value = object [T.pack "a" .= "1", T.pack "b" .= "2"]
-abv4 :: Value = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
 f3 :: Field = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
 -- Because aeson uses a hashmap, it will only record one attribute with
 -- the same key.
 f4 :: Field = Field { pangalan = "iii", attributes = [aa, aa, aa] }
+
+f5 :: Field = parsTest field "ab:\n"
+f5v :: Value =  toJSON f5
+f5e :: ByteString = encode f5v
+abo :: Value = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
+abv1 :: [Value] = [av, bv]
+abv2 :: Value = object [T.pack "a" .= "1", T.pack "b" .= "2"]
+abv4 :: Value = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
 
 attrs2 :: Value = mkObjectFromPairable attributeToPair [aa, ba, ca]
 

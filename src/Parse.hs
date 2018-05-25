@@ -199,8 +199,18 @@ fieldToJSON :: KeyValue kv => Field -> kv
 fieldToJSON Field { pangalan = p, attributes = as } =
   T.pack p .= mkObjectFromPairable attributeToPair as
 
+-- First step in encoding a Field
+fieldToPair :: Field -> (String, Value)
+fieldToPair f@Field { pangalan = p, attributes = as } =
+  case as of
+    [] -> (p, Null)
+    [a] -> (p, oneField a)
+    as -> (p, toJSON as)
+
 instance ToJSON Field where
-  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= toJSON as]
+  toJSON f@Field { pangalan = p, attributes = as} =
+    let (s, v) = fieldToPair f
+    in object [T.pack s .= v]
   --  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
@@ -295,12 +305,6 @@ data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
 
 instance ToJSON Card where
   toJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
-    where fieldToPair :: Field -> (String, Value)
-          fieldToPair f@Field { pangalan = p, attributes = as } =
-            case as of
-              [] -> (p, Null)
-              [a] -> (p, oneField a)
-              as -> (p, toJSON as)
 --            (p, mkObjectFromPairable attributeToPair as)
 
 -- Parse an card.
