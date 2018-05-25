@@ -42,12 +42,11 @@ spec = do
     it "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" $
       jsonTest field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" `shouldBe` "{\"TEL\":[{\"type\":\"CELL\"},{\"type\":\"VOICE\"},{\"type\":\"pref\"},\"15036451141\"]}"
 
-      
     it "ORG:Macys;\n -kdkdkdkd\n" $
-      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"Continuation\"]}"
+      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"\"]}"
 
     it "ORG:Macys--\n mcmcmcmc\n" $
-      jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":[{\"Continuation\":\"Macys--mcmcmcmc\"}]}"
+      jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":\"Macys--mcmcmcmc\"}"
 
     it "\n mcmcmcmc\n" $
       jsonTest field "\n mcmcmcmc\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
@@ -55,8 +54,8 @@ spec = do
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" $
       jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
 
-    it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n continue\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":{\"Continuation\":\"2014-06-09continue\"}}}]"
+    it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n  (Wednesday)\nNOTE:Has Immunization Record\nEND:VCARD" $
+      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09-\n Wednesday\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":\"2014-06-09-Wednesday\"}}]"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
       jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}}]"

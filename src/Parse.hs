@@ -235,8 +235,7 @@ extendLastAttribute :: [String] -> Attribute -> Attribute
 extendLastAttribute ss attr =
   case attr of
     NoAttribute -> ComplexAttribute { name = "Continuation", value = concat ss }
-    SimpleAttribute { name = n } ->
-      ComplexAttribute { name = "Continuation", value = n ++ concat ss }
+    SimpleAttribute { name = n } -> SimpleAttribute { name = n ++ concat ss }
     ComplexAttribute { name = n, value = v } ->
       ComplexAttribute { name = n, value = v ++ concat ss }
 
