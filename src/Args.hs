@@ -5,8 +5,6 @@ module Args where
 import System.IO
 import Options.Applicative
 import Data.Semigroup ((<>))
-import Data.Either
-import Control.Monad
 import Files
 
 -- Parsed Arguments as a list.
@@ -21,13 +19,13 @@ argString (VCF s) = s
 argString (JSON s) = s
 argString (Positional s) = s
 isVCF :: Arg -> Bool
-isVCF (VCF s) = True
+isVCF (VCF _s) = True
 isVCF _ = False
 isPositional :: Arg -> Bool
-isPositional (Positional s) = True
+isPositional (Positional _s) = True
 isPositional _ = False
 isJSON :: Arg -> Bool
-isJSON (JSON s) = True
+isJSON (JSON _s) = True
 isJSON _ = False
 
 -- Parse the command line options
@@ -108,4 +106,5 @@ argAnalysis (Args [a,b]) | isJSON a && (isVCF b || isPositional b) =
                         }
      }
 -- Three or more arguments is an error
-argAnalysis (Args as) = return (Left (ArgError "More that two parameters specified"))
+argAnalysis (Args _as) =
+  return (Left (ArgError "More that two parameters specified"))

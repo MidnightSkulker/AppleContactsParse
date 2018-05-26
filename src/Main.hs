@@ -1,14 +1,10 @@
 module Main where
 
 import Options.Applicative
-import Text.ParserCombinators.Parsec
 import System.IO
-import Data.Either
-import System.Exit
 import Parse
 import Test
 import Args
-import Files
 
 main :: IO ()
 main = do { parsedOptions <- execParser commandLineOptions
@@ -27,4 +23,5 @@ main = do { parsedOptions <- execParser commandLineOptions
                                 }
           }
 
+m :: IO ()
 m = main

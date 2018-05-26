@@ -5,15 +5,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Parse where
 
-import System.IO (readFile)
 import Text.ParserCombinators.Parsec
 import GHC.Generics (Generic)
-import Data.Monoid ((<>))
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(..), KeyValue(..), toJSONList)
-import Data.ByteString.Lazy.Char8 as DBLC8 (putStrLn, pack)
-import Data.Text as T (pack, Text)
+import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
+import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
-import GHC.Exts (fromList)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -117,9 +113,9 @@ fromPair :: KeyValue kv => (String, String) -> kv
 fromPair (s,t) = T.pack s .= t
 -- Make an object from a list of items that can be paired.
 mkObjectFromPairable :: (a -> (String, Value)) -> [a] -> Value
-mkObjectFromPairable toPair = object . map (fromPair . toPair)
-  where fromPair :: KeyValue kv => (String, Value) -> kv
-        fromPair (s, t) = (T.pack s .= t)
+mkObjectFromPairable toPair = object . map (mulaPair . toPair)
+  where mulaPair :: KeyValue kv => (String, Value) -> kv
+        mulaPair (s, t) = (T.pack s .= t)
 
 -- How to encode / decode an Attribute
 instance ToJSON Attribute where
@@ -164,17 +160,17 @@ uriChar = satisfy isAlphaNum <|> oneOf("-._~:/?#[]@!$&'()%*+,;=")
 
 -- URI Parser
 uri :: GenParser Char st String
-uri = do { uri <- many1 uriChar
+uri = do { url <- many1 uriChar
          ; eol
-         ; return uri
+         ; return url
          }
 
 -- Parser for URL fields
 urlField :: GenParser Char st Field
 urlField = do { optional itemPrefix
-              ; string "URL;"
+              ; _ <- string "URL;"
               ; attrs <- complexAttribute `sepBy` char ';'
-              ; char ':'
+              ; _ <- char ':'
               ; muri <- optionMaybe uri
               ; case muri of
                   Nothing -> return Field { pangalan = "Invalid URI in Address Book" , attributes = attrs }
@@ -201,16 +197,14 @@ fieldToJSON Field { pangalan = p, attributes = as } =
 
 -- First step in encoding a Field
 fieldToPair :: Field -> (String, Value)
-fieldToPair f@Field { pangalan = p, attributes = as } =
+fieldToPair Field { pangalan = p, attributes = as } =
   case as of
     [] -> (p, Null)
     [a] -> (p, oneField a)
-    as -> (p, toJSON as)
+    az -> (p, toJSON az)
 
 instance ToJSON Field where
-  toJSON f@Field { pangalan = p, attributes = as} =
-    let (s, v) = fieldToPair f
-    in object [T.pack s .= v]
+  toJSON f = let (s, v) = fieldToPair f in object [T.pack s .= v]
   --  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
@@ -224,10 +218,10 @@ firstAttributes f = init (attributes f)
 
 -- Update the last attribute of a field using an update function.
 updateLastAttribute :: Field -> (Attribute -> Attribute) -> Field
-updateLastAttribute field update =
-  let l = lastAttribute field
-      rest = firstAttributes field
-  in field { attributes = rest ++ [update l] }
+updateLastAttribute fld update =
+  let l = lastAttribute fld
+      rest = firstAttributes fld
+  in fld { attributes = rest ++ [update l] }
 
 -- To support continuation fields, extend the last attribute of a field
 -- with the continuation data.
@@ -273,7 +267,7 @@ field = try urlField <|> nonUrlField
 -- Apparently this are indicated by a leading blank
 -- These continuations always seem to alphanumeric strings
 continuation :: GenParser Char st String
-continuation = do { blank
+continuation = do { _ <- blank
                   ; a <- many (satisfy okJpgChar)
                   ; _ <- eol
                   ; return a

@@ -1,11 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Test where
 
-import Data.Aeson as Aeson (ToJSON(..), encode)
+import Data.Aeson as Aeson (ToJSON(..))
 import Text.ParserCombinators.Parsec
-import Data.ByteString.Lazy.Char8 as DBLC8 (ByteString, putStrLn, pack, unpack)
-import Data.Aeson as Aeson (ToJSON(..), object, pairs, (.=), encode, Value(..), KeyValue(..), toJSONList)
-import Data.Text as T (Text, pack)
+import Data.ByteString.Lazy.Char8 as DBLC8 (ByteString, unpack)
+import Data.Aeson as Aeson (object, (.=), encode, Value(..), KeyValue(..))
+import Data.Text as T (pack)
 import Data.Either ()
 import Data.Either.Utils (fromRight)
 import Parse
@@ -21,44 +21,73 @@ jsonTest p s = either show (DBLC8.unpack . encode) (test p s)
 parsTest :: (ToJSON a) => GenParser Char () a -> String -> a
 parsTest p s = fromRight (test p s)
 
-t1 :: String = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
+t1 :: String
+t1 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
 
-t2 :: String = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
+t2 :: String
+t2 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
 
 -- Some Test values
 
 
-aa :: Attribute = ComplexAttribute "a" "1"
-av :: Value = oneField aa
-ao :: Value = object [T.pack "a" .= (1 :: Integer)]
-ba :: Attribute = ComplexAttribute "b" "2"
-bv :: Value = oneField ba
-bo :: Value = object [T.pack "b" .= (2 :: Integer)]
-ca :: Attribute = ComplexAttribute "c" "3"
-attrs1 :: [Attribute] = [aa, ba, ca]
+aa :: Attribute
+aa = ComplexAttribute "a" "1"
+av :: Value
+av = oneField aa
+ao :: Value
+ao = object [T.pack "a" .= (1 :: Integer)]
+ba :: Attribute
+ba = ComplexAttribute "b" "2"
+bv :: Value
+bv = oneField ba
+bo :: Value
+bo = object [T.pack "b" .= (2 :: Integer)]
+ca :: Attribute
+ca = ComplexAttribute "c" "3"
+attrs1 :: [Attribute]
+attrs1 = [aa, ba, ca]
 
-f1 :: Field = Field { pangalan = "f1", attributes = attrs1 }
-f2 :: Field = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
-f3 :: Field = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
+f1 :: Field
+f1 = Field { pangalan = "f1", attributes = attrs1 }
+f2 :: Field
+f2 = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
+f3 :: Field
+f3 = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
 -- Because aeson uses a hashmap, it will only record one attribute with
 -- the same key.
-f4 :: Field = Field { pangalan = "iii", attributes = [aa, aa, aa] }
+f4 :: Field
+f4 = Field { pangalan = "iii", attributes = [aa, aa, aa] }
 
-f5 :: Field = parsTest field "ab:\n"
-f5v :: Value =  toJSON f5
-f5e :: ByteString = encode f5v
-f6 :: Field = parsTest field "ORG:Macys;\n"
-f6v :: Value = toJSON f6
-f6e :: ByteString = encode f6v
-f7 :: Field = parsTest field "ORG:Macys-\n kdkdkdkd\n"
-f7v :: Value = toJSON f7
-f7e :: ByteString = encode f7v
-abo :: Value = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
-abv1 :: [Value] = [av, bv]
-abv2 :: Value = object [T.pack "a" .= "1", T.pack "b" .= "2"]
-abv4 :: Value = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
+f5 :: Field
+f5 = parsTest field "ab:\n"
+f5v :: Value
+f5v = toJSON f5
+f5e :: ByteString
+f5e = encode f5v
+f6 :: Field
+f6 = parsTest field "ORG:Macys;\n"
+f6v :: Value
+f6v = toJSON f6
+f6e :: ByteString
+f6e = encode f6v
+f7 :: Field
+f7 = parsTest field "ORG:Macys-\n kdkdkdkd\n"
+f7v :: Value
+f7v = toJSON f7
+f7e :: ByteString
+f7e = encode f7v
+abo :: Value
+abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
+abv1 :: [Value]
+abv1 = [av, bv]
+abv2 :: Value
+abv2 = object [T.pack "a" .= "1", T.pack "b" .= "2"]
+abv4 :: Value
+abv4 = object (map fromPair [("a", "1"), ("b", "2"), ("c","")])
 
-attrs2 :: Value = mkObjectFromPairable attributeToPair [aa, ba, ca]
+attrs2 :: Value
+attrs2 = mkObjectFromPairable attributeToPair [aa, ba, ca]
 
-card1 :: Card = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
+card1 :: Card
+card1 = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
 
