@@ -32,14 +32,10 @@ t2 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
 
 aa :: Attribute
 aa = ComplexAttribute "a" "1"
-av :: Value
-av = oneField aa
 ao :: Value
 ao = object [T.pack "a" .= (1 :: Integer)]
 ba :: Attribute
 ba = ComplexAttribute "b" "2"
-bv :: Value
-bv = oneField ba
 bo :: Value
 bo = object [T.pack "b" .= (2 :: Integer)]
 ca :: Attribute
@@ -78,8 +74,6 @@ f7e :: ByteString
 f7e = encode f7v
 abo :: Value
 abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
-abv1 :: [Value]
-abv1 = [av, bv]
 abv2 :: Value
 abv2 = object [T.pack "a" .= "1", T.pack "b" .= "2"]
 abv4 :: Value

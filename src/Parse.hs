@@ -3,7 +3,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Parse where
+module Parse (
+    vcf
+  , field
+  , urlField
+  , card
+  , cards
+  , attribute
+  , mkObjectFromPairable
+  , attributeToPair
+  , fromPair
+  , Attribute (..)
+  , Field (..)
+  , Card (..) ) where
 
 import Text.ParserCombinators.Parsec
 import GHC.Generics (Generic)
@@ -75,8 +87,8 @@ All of this suggests a special case for URL fields, which I will start working o
 
 -}
 
-whiteSpace :: GenParser Char st String
-whiteSpace = many (oneOf " \t\n")
+-- whiteSpace :: GenParser Char st String
+-- whiteSpace = many (oneOf " \t\n")
 blank :: GenParser Char st Char
 blank = char ' '
 number :: GenParser Char st String
@@ -181,19 +193,6 @@ urlField = do { optional itemPrefix
 
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show, Generic)
-
--- fieldToPair :: Field -> (String, Field { pangalan = p, attributes = attrs }
-
--- Encode Fields as JSONx
-fields :: [Attribute] -> Value
-fields [] = Null
--- Do not embed a single value in Array constructor
-fields [a] = toJSON a
-fields as  = toJSON (map oneField as)
-
-fieldToJSON :: KeyValue kv => Field -> kv
-fieldToJSON Field { pangalan = p, attributes = as } =
-  T.pack p .= mkObjectFromPairable attributeToPair as
 
 -- First step in encoding a Field
 fieldToPair :: Field -> (String, Value)
