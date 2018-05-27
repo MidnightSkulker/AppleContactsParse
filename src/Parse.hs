@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Parse (
     vcf
+    -- All the following exports are for testing
   , field
   , urlField
   , card
