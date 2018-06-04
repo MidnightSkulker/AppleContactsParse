@@ -12,6 +12,7 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
+allow-newer:         true
                      
 executable AppleContactsParse
   hs-source-dirs:      src
@@ -27,6 +28,7 @@ executable AppleContactsParse
                        aeson,
                        network-uri,
                        text,
+                       regex,
                        MissingH
 
 test-suite unit-tests
@@ -42,4 +44,6 @@ test-suite unit-tests
                        aeson,
                        network-uri,
                        text,
+                       regex,
+                       regex-compat,
                        MissingH

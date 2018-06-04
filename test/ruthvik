@@ -1,0 +1,3 @@
+#!/bin/bash
+set -v
+AppleContactsParse --vcf=test/Ruthvik.vcf

@@ -1,0 +1,19 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN
+N:Vignesh;Ruthvik;;;
+FN:Ruthvik Vignesh
+ORG:Kasalukuyang Estudyante;
+item1.EMAIL;type=INTERNET;type=pref:vicky.008@gmail.com
+item1.X-ABLabel:Dad
+item2.TEL;type=pref:8472081772
+item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+item3.TEL:8474034147
+item3.X-ABLabel:Mom (Kasthuri Thangamariappan)
+ADR;type=HOME;type=pref:;;16455 SW Estuary Dr. #208;Beaverton;OR;97006;USA
+NOTE:Has Immunization Record\n
+BDAY:2014-06-09
+CATEGORIES:Address Book
+UID:5f124cfb15813f50
+X-ABUID:77230A65-1FBF-4BF8-B828-BB7CAA8BABF0:ABPerson
+END:VCARD

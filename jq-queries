@@ -1,0 +1,1 @@
+cat ARCHIVE/all.json | jq '.[0:100]' | jq '.[].fields | select((.ORG != null) and (.ORG[0] | contains("Kasalukuyang")))' | jq length
