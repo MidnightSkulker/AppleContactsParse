@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts #-}
+
 module Parse (
     vcf
     -- All the following exports are for testing
@@ -19,11 +19,12 @@ module Parse (
   , Card (..) ) where
 
 import Text.ParserCombinators.Parsec
-import Text.RE.TDFA.String
+-- import Text.RE.TDFA.String
 import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
+import Text.Regex
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD

@@ -29,6 +29,7 @@ executable AppleContactsParse
                        network-uri,
                        text,
                        regex,
+                       regex-compat,
                        MissingH
 
 test-suite unit-tests
