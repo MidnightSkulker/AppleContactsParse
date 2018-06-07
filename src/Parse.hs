@@ -24,7 +24,7 @@ import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
-import Data.List (partition, groupBy)
+import Data.List (partition, groupBy, find)
 import Data.Maybe (isJust, fromJust)
 import Data.Tuple.Utils (thd3)
 import Text.Regex
@@ -113,6 +113,11 @@ data Attribute = ComplexAttribute { name :: String, value :: String }
                | SimpleAttribute { name :: String }
                | NoAttribute deriving (Show, Generic)
 
+-- Determine if an attribute is simple
+isSimpleAttribute :: Attribute -> Bool
+isSimpleAttribute (SimpleAttribute { name = _ }) = True
+isSimpleAttribute _ = False
+
 -- Convert an attribute to a pair
 attributeToPair :: Attribute -> (String, Value)
 attributeToPair ComplexAttribute { name = n, value = v } = ( n, String (T.pack v) )
@@ -160,6 +165,7 @@ complexAttribute = do { n <- attributeName
 simpleAttribute :: GenParser Char st Attribute
 simpleAttribute = do { n <- attributeValue
                      ; return SimpleAttribute { name = n } }
+
 -- An attribute name must be non-empty
 attributeName :: GenParser Char st String
 attributeName = many1 (noneOf "=:;\r\n")
@@ -239,22 +245,34 @@ combineItems fs =
 -- Put together a new field with a more sane structure
 itemFieldRestructure :: [Field] -> Field
 itemFieldRestructure [f1, f2] =
-  let itemField1 = fieldItemStructure f1
-      itemField2 = fieldItemStructure f2
-  in undefined
-itemFieldRestrcuture _ = Field { pangalan = "Broken Field", attributes = []}
+  let (match1, after1, num1) = fieldItemStructure f1
+      (match2, after2, num2) = fieldItemStructure f2
+      mkItemField :: Field -> Field -> String -> Field
+      mkItemField label value labelStr =
+        let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes label))
+            attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes value))
+        in Field { pangalan = labelStr ++ "-" ++ labelValue, attributes = [] }
+  in if (after1 == ".X-ABLabel")
+     then mkItemField f1 f2 after2
+     else if (after2 == ".X-ABLabel")
+          then mkItemField f2 f1 after1
+          else brokenItemField match1 after1
+itemFieldRestrcuture _ = brokenItemField "None" "None"
 
-fieldItemStructure :: Field -> Maybe (String, String, String)
-fieldItemStructure = isItem . pangalan
+brokenItemField :: String -> String -> Field
+brokenItemField s1 s2 =
+  Field { pangalan = "Broken Item Field: " ++ s1 ++ s2, attributes = [] }
+
+-- Need to be sure it is an item field before you call this, otherwise
+-- you will get an exception
+fieldItemStructure :: Field -> (String, String, String)
+fieldItemStructure = fromJust . isItem . pangalan
 -- Determine if a field is an "item", i.e. the name starts with item[0-9]+
 isFieldItem :: Field -> Bool
-isFieldItem = isJust . fieldItemStructure
+isFieldItem = isJust . isItem . pangalan
 -- Determine if two fields have the same item number
 sameItemNumber :: Field -> Field -> Bool
-sameItemNumber f1 f2 =
-  let n1 = thd3 (fromJust (fieldItemStructure f1))
-      n2 = thd3 (fromJust (fieldItemStructure f2))
-  in n1 == n2
+sameItemNumber f1 f2 = itemNumber (pangalan f1) == itemNumber (pangalan f2)
 
 -- First step in encoding a Field
 fieldToPair :: Field -> (String, Value)
@@ -348,14 +366,6 @@ closeCard = string "END:VCARD" >> return ()
 
 -- An card consists of one or more fields.
 data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
-
--- mkObjectFromFields :: (Field -> (String, String)) -> [Field] -> Value
--- mkObjectFromFields toPair fields = object [ map (fromPair . fieldToPair) fields ]
---   where fromPair :: KeyValue kv => (String, String) -> kv
---         fromPair (s, t) = (T.pack s .= t)
---         fieldToPair :: KeyValue kv => Field -> kv
---         fieldToPair f = (T.pack
---  (fieldName f) .= mkObjectFromPairable toPair (attributes f
 
 -- Fullname Order: Last, First, Middle, Prefix, Suffix
 
