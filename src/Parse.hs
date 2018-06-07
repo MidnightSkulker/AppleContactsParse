@@ -24,7 +24,11 @@ import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
+import Data.List (partition, groupBy)
+import Data.Maybe (isJust, fromJust)
+import Data.Tuple.Utils (thd3)
 import Text.Regex
+import RE
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -196,6 +200,61 @@ urlField = do { optional itemPrefix
 
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show, Generic)
+
+-- The VCF file has an unfortunate encoding for custom names for fields. Here is
+-- and example of a card with custom names for telephone and E-mail fields:
+-- BEGIN:VCARD
+-- VERSION:3.0
+-- PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN
+-- N:Vignesh;Ruthvik;;;
+-- FN:Ruthvik Vignesh
+-- ORG:Kasalukuyang Estudyante;
+-- item1.EMAIL;type=INTERNET;type=pref:vicky.008@gmail.com
+-- item1.X-ABLabel:Dad
+-- item2.TEL;type=pref:8472081772
+-- item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+-- item3.TEL:8474034147
+-- item3.X-ABLabel:Mom (Kasthuri Thangamariappan)
+-- ADR;type=HOME;type=pref:;;16455 SW Estuary Dr. #208;Beaverton;OR;97006;USA
+-- NOTE:Has Immunization Record\n
+-- BDAY:2014-06-09
+-- CATEGORIES:Address Book
+-- UID:5f124cfb15813f50
+-- X-ABUID:77230A65-1FBF-4BF8-B828-BB7CAA8BABF0:ABPerson
+-- END:VCARD
+--
+-- Notice the EMAIL field (item1.Email). This is an E-mail field with the
+-- custom label "Dad". It is split into two lines, thus it will result
+-- in two fields in the encoding of the card. The following function will
+-- find both of these fields and combine them into one field.
+-- Similar remarks apply to the telephone fields.
+combineItems :: [Field] -> [Field]
+combineItems fs =
+  let (items, nonItems) = partition isFieldItem fs
+      itemGroups = groupBy sameItemNumber items
+      itemGroupsRestructured = map itemFieldRestructure itemGroups
+  in itemGroupsRestructured ++ nonItems
+
+-- For fields that are for items, i.e. the name starts with item[0-9]+
+-- Put together a new field with a more sane structure
+itemFieldRestructure :: [Field] -> Field
+itemFieldRestructure [f1, f2] =
+  let itemField1 = fieldItemStructure f1
+      itemField2 = fieldItemStructure f2
+  in undefined
+itemFieldRestrcuture _ = Field { pangalan = "Broken Field", attributes = []}
+
+fieldItemStructure :: Field -> Maybe (String, String, String)
+fieldItemStructure = isItem . pangalan
+-- Determine if a field is an "item", i.e. the name starts with item[0-9]+
+isFieldItem :: Field -> Bool
+isFieldItem = isJust . fieldItemStructure
+-- Determine if two fields have the same item number
+sameItemNumber :: Field -> Field -> Bool
+sameItemNumber f1 f2 =
+  let n1 = thd3 (fromJust (fieldItemStructure f1))
+      n2 = thd3 (fromJust (fieldItemStructure f2))
+  in n1 == n2
 
 -- First step in encoding a Field
 fieldToPair :: Field -> (String, Value)

@@ -22,10 +22,21 @@ mall1 = matchRegexAll re1 "949494"
 -- For matching the multipl entry items in the address book
 itemRE :: Regex
 itemRE = mkRegex "^item[0-9]+"
-
+numberRE :: Regex
+numberRE = mkRegex "[0-9]+"
 item1MatchAll, item2MatchAll :: Maybe (String, String, String, [String])
 item1MatchAll = matchRegexAll itemRE "item123.X-ABLabel"
 item2MatchAll = matchRegexAll itemRE "item1.EMAIL"
 item1Match, item2Match :: Maybe [String]
 item1Match = matchRegex itemRE "item123.X-ABLabel"
 item2Match = matchRegex itemRE "item1.EMAIL"
+
+isItem :: String -> Maybe (String, String, String)
+isItem s =
+  let mMatch = matchRegexAll itemRE s
+  in case mMatch of
+       Just (_before, match, after, _subs) ->
+         case matchRegexAll numberRE match of
+           Just (_, n, _, _) -> Just (match, after, n)
+           Nothing -> Nothing
+       Nothing -> Nothing
