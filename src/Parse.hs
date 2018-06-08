@@ -251,7 +251,8 @@ itemFieldRestructure [f1, f2] =
       mkItemField label value labelStr =
         let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes label))
             attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes value))
-        in Field { pangalan = labelStr ++ "-" ++ labelValue, attributes = [] }
+        in Field { pangalan = labelStr ++ "-" ++ labelValue
+                 , attributes = [mkSimpleAttribute attrValue] }
   in if (after1 == ".X-ABLabel")
      then mkItemField f1 f2 after2
      else if (after2 == ".X-ABLabel")
