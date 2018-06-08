@@ -8,7 +8,7 @@ import Data.Tuple.Utils (thd3)
 re1 :: Regex
 re1 = mkRegex "[0-9]+\\."
 re2 :: Regex
-re2 = mkRegexWithOpts "[0-9]+" True True
+re2 = mkRegexWithOpts "[0-9]+." True True
 re3 :: Regex
 re3 = mkRegex "9"
 
@@ -23,7 +23,7 @@ mall1 = matchRegexAll re1 "949494"
 
 -- For matching the multipl entry items in the address book
 itemRE :: Regex
-itemRE = mkRegex "^item[0-9]+"
+itemRE = mkRegex "^item[0-9]+."
 numberRE :: Regex
 numberRE = mkRegex "[0-9]+"
 item1MatchAll, item2MatchAll :: Maybe (String, String, String, [String])

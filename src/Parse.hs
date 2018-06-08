@@ -253,9 +253,9 @@ itemFieldRestructure [f1, f2] =
             attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes value))
         in Field { pangalan = labelStr ++ "-" ++ labelValue
                  , attributes = [mkSimpleAttribute attrValue] }
-  in if (after1 == ".X-ABLabel")
+  in if (after1 == "X-ABLabel")
      then mkItemField f1 f2 after2
-     else if (after2 == ".X-ABLabel")
+     else if (after2 == "X-ABLabel")
           then mkItemField f2 f1 after1
           else brokenItemField match1 after1
 itemFieldRestrcuture _ = brokenItemField "None" "None"
@@ -378,7 +378,7 @@ instance ToJSON Card where
 card :: GenParser Char st Card
 card = do { openCard
           ; fs <- field `manyTill` (try closeCard)
-          ; return Card { fieldz = fs }
+          ; return Card { fieldz = combineItems fs }
           }
 
 -- A VCF file is a list of cards.
