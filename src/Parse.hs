@@ -26,9 +26,7 @@ import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
 import Data.List (partition, groupBy, find)
 import Data.Maybe (isJust, fromJust)
-import Data.Tuple.Utils (thd3)
-import Text.Regex
-import RE
+import RE (isItem, itemNumber)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -245,12 +243,12 @@ combineItems fs =
 -- Put together a new field with a more sane structure
 itemFieldRestructure :: [Field] -> Field
 itemFieldRestructure [f1, f2] =
-  let (match1, after1, num1) = fieldItemStructure f1
-      (match2, after2, num2) = fieldItemStructure f2
+  let (match1, after1, _num1) = fieldItemStructure f1
+      (_match2, after2, _num2) = fieldItemStructure f2
       mkItemField :: Field -> Field -> String -> Field
-      mkItemField label value labelStr =
-        let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes label))
-            attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes value))
+      mkItemField labelField valueField labelStr =
+        let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes labelField))
+            attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes valueField))
         in Field { pangalan = labelStr ++ "-" ++ labelValue
                  , attributes = [mkSimpleAttribute attrValue] }
   in if (after1 == "X-ABLabel")
@@ -258,7 +256,7 @@ itemFieldRestructure [f1, f2] =
      else if (after2 == "X-ABLabel")
           then mkItemField f2 f1 after1
           else brokenItemField match1 after1
-itemFieldRestrcuture _ = brokenItemField "None" "None"
+itemFieldRestructure _ = brokenItemField "None" "None"
 
 brokenItemField :: String -> String -> Field
 brokenItemField s1 s2 =
