@@ -1,1 +1,3 @@
 cat ARCHIVE/all.json | jq '.[0:100]' | jq '.[].fields | select((.ORG != null) and (.ORG[0] | contains("Kasalukuyang")))' | jq length
+
+cat ~/Google\ Drive/Learn/Haskell/AppleContactsParse/ARCHIVE/all.json | jq '.[0:150]' | jq '.[].fields | select((.ORG != null) and (.ORG[0] | contains("Kasalukuyang")))' | jq '. | with_entries(select(.key|match("EMAIL-+";"i")))[]'
