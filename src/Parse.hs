@@ -26,6 +26,7 @@ import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
 import Data.List (partition, groupBy, find)
 import Data.Maybe (isJust, fromJust)
+import Data.Tuple.Utils (snd3)
 import RE (isItem, itemNumber)
 
 {- A VCF file contains a list of cards, each card has the following:
@@ -236,28 +237,77 @@ combineItems :: [Field] -> [Field]
 combineItems fs =
   let (items, nonItems) = partition isFieldItem fs
       itemGroups = groupBy sameItemNumber items
+      -- From each item group, form a single item with a combined label,
+      -- and the value (e.g. Email address or telephone number)
       itemGroupsRestructured = map itemFieldRestructure itemGroups
-  in itemGroupsRestructured ++ nonItems
+      -- If there is more than one telephone number or Email address,
+      -- further group these item groups into a single item that lists
+      -- all the Email addresses or telephone numbers.
+      itemGroupGroups :: [[[Field]]]
+      itemGroupGroups = groupBy sameItemGroupType itemGroups
+      itemGroupGroupFields = map mkItemGroupGroupField itemGroupGroups
+  in itemGroupsRestructured ++ nonItems ++ itemGroupGroupFields
+
+-- For an item group group, create a combined item with all of the values
+mkItemGroupGroupField :: [[Field]] -> Field
+mkItemGroupGroupField fss =
+  let labelsAndValues :: [(Field, Field)]
+      labelsAndValues = map getLabelAndValueFields fss
+  in undefined
 
 -- For fields that are for items, i.e. the name starts with item[0-9]+
 -- Put together a new field with a more sane structure
 itemFieldRestructure :: [Field] -> Field
 itemFieldRestructure [f1, f2] =
-  let (match1, after1, _num1) = fieldItemStructure f1
-      (_match2, after2, _num2) = fieldItemStructure f2
-      mkItemField :: Field -> Field -> String -> Field
-      mkItemField labelField valueField labelStr =
-        let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes labelField))
-            attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes valueField))
-        in Field { pangalan = labelStr ++ "-" ++ labelValue
-                 , attributes = [mkSimpleAttribute attrValue] }
-  in if (after1 == "X-ABLabel")
-     then mkItemField f1 f2 after2
-     else if (after2 == "X-ABLabel")
-          then mkItemField f2 f1 after1
-          else brokenItemField match1 after1
+  let (labelField, valueField) = getLabelAndValueFields [f1, f2]
+      (_match2, after2, _num2) = fieldItemStructure valueField
+  in mkItemField labelField valueField after2
 itemFieldRestructure _ = brokenItemField "None" "None"
 
+-- Make an item field from the two fields (Label and Value)
+mkItemField :: Field -> Field -> String -> Field
+mkItemField labelField valueField labelStr =
+  let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes labelField))
+      attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes valueField))
+  in Field { pangalan = labelStr ++ "-" ++ labelValue
+           , attributes = [mkSimpleAttribute attrValue] }
+
+-- Get the AB-Label and Value fields of an item field
+-- The fields may come in either order
+-- Fails if not called with a list of exactly two fields.
+getLabelAndValueFields :: [Field] -> (Field, Field) -- (Label, Value)
+getLabelAndValueFields [f1, f2] = 
+  let (_match1, after1, _num1) = fieldItemStructure f1
+  in if (after1 == "X-ABLabel")
+     then (f1, f2)
+     else (f2, f1)
+getLabelAndValueFields fs = error ("getLabelAndValueFields: " ++ show fs)
+
+-- Get the label and value parts of the item field
+getLabelAndValue :: [Field] -> (String, String) -- (Label, Value)
+getLabelAndValue [f1, f2] =
+  let (_match1, after1, _num1) = fieldItemStructure f1
+      (_match2, _after2, _num2) = fieldItemStructure f2
+  in if (after1 == "X-ABLabel")
+     then let attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes f2))
+              labelStr = maybe "NoName" name (find isSimpleAttribute (attributes f1))
+          in (labelStr, attrValue)
+     else let attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes f1))
+              labelStr = maybe "NoName" name (find isSimpleAttribute (attributes f2))
+          in (labelStr, attrValue)
+getLabelAndValue fs = error ("getLabelAndValue: " ++ show fs)
+
+-- Get the "after" part of each field label, e.g. "TEL" for telephone numbers
+-- and "EMAIL" for email addresses.
+getItemGroupType :: [Field] -> String
+getItemGroupType [f1, _f2] = snd3 (fieldItemStructure f1)
+getItemGroupType fs = error ("getAfter: " ++ show fs)
+
+-- Determine if two item groups have the same type (e.g. "TEL" or "EMAIL")
+sameItemGroupType :: [Field] -> [Field] -> Bool
+sameItemGroupType fs1 fs2 = getItemGroupType fs1 == getItemGroupType fs2
+
+-- Generate a broken field when something goes wrong
 brokenItemField :: String -> String -> Field
 brokenItemField s1 s2 =
   Field { pangalan = "Broken Item Field: " ++ s1 ++ s2, attributes = [] }

@@ -43,7 +43,7 @@ spec = do
       jsonTest field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" `shouldBe` "{\"TEL\":[{\"type\":\"CELL\"},{\"type\":\"VOICE\"},{\"type\":\"pref\"},\"15036451141\"]}"
 
     it "ORG:Macys-;\n kdkdkdkd\n" $
-      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"-kdkdkdkd\"]}"
+      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"-kdkdkdkd\"]}""{\"ORG\":[\"Macys\",\"\"]}"
 
     it "ORG:Macys--\n mcmcmcmc\n" $
       jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":\"Macys--mcmcmcmc\"}"
