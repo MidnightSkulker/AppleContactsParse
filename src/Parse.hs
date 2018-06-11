@@ -24,7 +24,7 @@ import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
-import Data.List (partition, groupBy, find)
+import Data.List (partition, groupBy, find, intercalate)
 import Data.Maybe (isJust, fromJust)
 import RE (isItem, itemNumber)
 
@@ -239,6 +239,8 @@ data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (S
 data FieldItemMember = FieldItemMember
   { matchText :: String -- Matched part of field label, i.e. "item2."
   , afterText :: String -- After the matched portion, i.e. "TEL"
+                        -- This is also the "type" of the FieldItem
+                        -- when the field is not X-ABLabel
   , itemNum   :: String -- The item number, i.e. "2" from "item2"
   , itemValue :: String -- The value of the item, i.e. "8472081772"
                         -- for a telephone number.
@@ -248,6 +250,25 @@ data FieldItemMember = FieldItemMember
 mkFieldItemMember :: String -> String -> String -> String -> FieldItemMember
 mkFieldItemMember m a inum ival =
   FieldItemMember { matchText = m, afterText = a, itemNum = inum, itemValue = ival }
+
+-- Get the field Item type
+getFieldItemType :: FieldItem -> String
+getFieldItemType = afterText . labelMember
+-- Determine if two field items have the same type
+sameFieldItemType :: FieldItem -> FieldItem -> Bool
+sameFieldItemType f1 f2 = getFieldItemType f1 == getFieldItemType f2
+-- Get the value of the attribute
+getFieldTypeAttrValue :: FieldItem -> String
+getFieldTypeAttrValue = itemValue . valueMember
+-- Build a combined Field from a group of field of the same type (e.g. TEL)
+mkGroupFieldItem :: [FieldItem] -> Field
+mkGroupFieldItem [] = error "mkGroupFieldItem []"
+mkGroupFieldItem fs =
+  let fieldItemType = getFieldItemType (head fs)
+      attrs = map getFieldTypeAttrValue fs
+      smushedAttrs = intercalate "," attrs
+  in Field { pangalan = fieldItemType ++ "S"
+           , attributes = [mkSimpleAttribute smushedAttrs] }
 
 -- All of the data for a Field Item, i.e. a FieldItemMember for both items:
 -- item2.TEL;type=pref:8472081772
@@ -302,10 +323,10 @@ combineItems fs =
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
-      -- itemGroupGroups :: [[[Field]]]
-      -- itemGroupGroups = groupBy sameItemGroupType itemGroups
-      -- itemGroupGroupFields = map mkItemGroupGroupField itemGroupGroups
-  in combinedFields ++ nonItems
+      fieldItemGroups :: [[FieldItem]]
+      fieldItemGroups = groupBy sameFieldItemType fieldItems
+      combinedItems = map mkGroupFieldItem fieldItemGroups
+  in combinedFields ++ nonItems ++ combinedItems
 
 -- Make an item field from an item FieldItem record
 mkItemField :: FieldItem -> Field
