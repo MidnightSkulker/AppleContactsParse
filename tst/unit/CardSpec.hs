@@ -4,9 +4,6 @@ module CardSpec where
 import Test.Hspec
 import Test
 import Parse
-import Data.Aeson as Aeson (ToJSON(..), encode)
-import Data.Text as T (unpack, pack)
-import Data.ByteString.Lazy.Char8 as DBLC8 (pack)
 import Text.ParserCombinators.Parsec
 
 gronk :: GenParser Char st String
@@ -43,7 +40,7 @@ spec = do
       jsonTest field "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" `shouldBe` "{\"TEL\":[{\"type\":\"CELL\"},{\"type\":\"VOICE\"},{\"type\":\"pref\"},\"15036451141\"]}"
 
     it "ORG:Macys-;\n kdkdkdkd\n" $
-      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"-kdkdkdkd\"]}""{\"ORG\":[\"Macys\",\"\"]}"
+      jsonTest field "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"-kdkdkdkd\"]}"
 
     it "ORG:Macys--\n mcmcmcmc\n" $
       jsonTest field "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":\"Macys--mcmcmcmc\"}"
