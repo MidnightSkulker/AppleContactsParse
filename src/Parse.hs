@@ -26,7 +26,6 @@ import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
 import Data.List (partition, groupBy, find)
 import Data.Maybe (isJust, fromJust)
-import Data.Tuple.Utils (snd3)
 import RE (isItem, itemNumber)
 
 {- A VCF file contains a list of cards, each card has the following:
@@ -230,87 +229,94 @@ data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (S
 --
 -- Notice the EMAIL field (item1.Email). This is an E-mail field with the
 -- custom label "Dad". It is split into two lines, thus it will result
--- in two fields in the encoding of the card. The following function will
--- find both of these fields and combine them into one field.
--- Similar remarks apply to the telephone fields.
-combineItems :: [Field] -> [Field]
-combineItems fs =
-  let (items, nonItems) = partition isFieldItem fs
-      itemGroups = groupBy sameItemNumber items
-      -- From each item group, form a single item with a combined label,
-      -- and the value (e.g. Email address or telephone number)
-      itemGroupsRestructured = map itemFieldRestructure itemGroups
-      -- If there is more than one telephone number or Email address,
-      -- further group these item groups into a single item that lists
-      -- all the Email addresses or telephone numbers.
-      itemGroupGroups :: [[[Field]]]
-      itemGroupGroups = groupBy sameItemGroupType itemGroups
-      itemGroupGroupFields = map mkItemGroupGroupField itemGroupGroups
-  in itemGroupsRestructured ++ nonItems ++ itemGroupGroupFields
+-- in two fields in the encoding of the card.
 
--- For an item group group, create a combined item with all of the values
-mkItemGroupGroupField :: [[Field]] -> Field
-mkItemGroupGroupField fss =
-  let labelsAndValues :: [(Field, Field)]
-      labelsAndValues = map getLabelAndValueFields fss
-  in undefined
+-- Data structure to represent the information from one part of an item
+-- field, i.e. either
+-- item2.TEL;type=pref:8472081772
+--      <or>
+-- item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+data FieldItemMember = FieldItemMember
+  { matchText :: String -- Matched part of field label, i.e. "item2."
+  , afterText :: String -- After the matched portion, i.e. "TEL"
+  , itemNum   :: String -- The item number, i.e. "2" from "item2"
+  , itemValue :: String -- The value of the item, i.e. "8472081772"
+                        -- for a telephone number.
+  } deriving (Eq, Show)
 
--- For fields that are for items, i.e. the name starts with item[0-9]+
--- Put together a new field with a more sane structure
-itemFieldRestructure :: [Field] -> Field
-itemFieldRestructure [f1, f2] =
-  let (labelField, valueField) = getLabelAndValueFields [f1, f2]
-      (_match2, after2, _num2) = fieldItemStructure valueField
-  in mkItemField labelField valueField after2
-itemFieldRestructure _ = brokenItemField "None" "None"
+-- Build a FieldItemMember from the four fields
+mkFieldItemMember :: String -> String -> String -> String -> FieldItemMember
+mkFieldItemMember m a inum ival =
+  FieldItemMember { matchText = m, afterText = a, itemNum = inum, itemValue = ival }
 
--- Make an item field from the two fields (Label and Value)
-mkItemField :: Field -> Field -> String -> Field
-mkItemField labelField valueField labelStr =
-  let labelValue = maybe "NoName" name (find isSimpleAttribute (attributes labelField))
-      attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes valueField))
-  in Field { pangalan = labelStr ++ "-" ++ labelValue
-           , attributes = [mkSimpleAttribute attrValue] }
+-- All of the data for a Field Item, i.e. a FieldItemMember for both items:
+-- item2.TEL;type=pref:8472081772
+--       <and>
+-- item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+data FieldItem = FieldItem { labelMember :: FieldItemMember
+                           , valueMember :: FieldItemMember
+                           } |
+                 BrokenFieldItem { debugData :: String } deriving (Eq, Show)
 
--- Get the AB-Label and Value fields of an item field
--- The fields may come in either order
--- Fails if not called with a list of exactly two fields.
-getLabelAndValueFields :: [Field] -> (Field, Field) -- (Label, Value)
-getLabelAndValueFields [f1, f2] = 
-  let (_match1, after1, _num1) = fieldItemStructure f1
-  in if (after1 == "X-ABLabel")
-     then (f1, f2)
-     else (f2, f1)
-getLabelAndValueFields fs = error ("getLabelAndValueFields: " ++ show fs)
-
--- Get the label and value parts of the item field
-getLabelAndValue :: [Field] -> (String, String) -- (Label, Value)
-getLabelAndValue [f1, f2] =
-  let (_match1, after1, _num1) = fieldItemStructure f1
-      (_match2, _after2, _num2) = fieldItemStructure f2
+-- Make a FieldItem from a list of two member fields.
+-- The fields come from a list of fields, so a priori we do not know
+-- which field is the label and which field is the value.
+mkFieldItem :: Field -> Field -> FieldItem
+mkFieldItem f1 f2 =
+  let (match1, after1, num1) = fieldItemStructure f1
+      (match2, after2, num2) = fieldItemStructure f2
   in if (after1 == "X-ABLabel")
      then let attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes f2))
               labelStr = maybe "NoName" name (find isSimpleAttribute (attributes f1))
-          in (labelStr, attrValue)
+              labelMem = mkFieldItemMember match1 after1 num1 labelStr
+              valueMem = mkFieldItemMember match2 after2 num2 attrValue
+          in FieldItem { labelMember = labelMem, valueMember = valueMem }
      else let attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes f1))
               labelStr = maybe "NoName" name (find isSimpleAttribute (attributes f2))
-          in (labelStr, attrValue)
-getLabelAndValue fs = error ("getLabelAndValue: " ++ show fs)
+              labelMem = mkFieldItemMember match1 after1 num1 labelStr
+              valueMem = mkFieldItemMember match2 after2 num2 attrValue
+          in FieldItem { labelMember = labelMem, valueMember = valueMem }
 
--- Get the "after" part of each field label, e.g. "TEL" for telephone numbers
--- and "EMAIL" for email addresses.
-getItemGroupType :: [Field] -> String
-getItemGroupType [f1, _f2] = snd3 (fieldItemStructure f1)
-getItemGroupType fs = error ("getAfter: " ++ show fs)
+-- Make a field item from a list of two members
+mkFieldItemFromList :: [Field] -> FieldItem
+mkFieldItemFromList [f1, f2] = mkFieldItem f1 f2
+mkFieldItemFromList fs = BrokenFieldItem { debugData = show fs }
 
--- Determine if two item groups have the same type (e.g. "TEL" or "EMAIL")
-sameItemGroupType :: [Field] -> [Field] -> Bool
-sameItemGroupType fs1 fs2 = getItemGroupType fs1 == getItemGroupType fs2
+-- The following function will find both of these fields and combine
+-- them into one field. Similar remarks apply to the telephone fields.
+combineItems :: [Field] -> [Field]
+combineItems fs =
+  let (items, nonItems) = partition isFieldItem fs
+      -- Get the item groups, i.e. two fields of the form
+      -- item2.TEL;type=pref:8472081772
+      -- item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+      -- Note that the two members of the item group may come in either order.
+      itemGroups :: [[Field]]
+      itemGroups = groupBy sameItemNumber items
+      -- Compute the information needed from ieach itemGroup
+      fieldItems :: [FieldItem]
+      fieldItems = map mkFieldItemFromList itemGroups
+      -- Turn the field items into single fields
+      combinedFields :: [Field]
+      combinedFields = map mkItemField fieldItems
+      -- If there is more than one telephone number or Email address,
+      -- further group these item groups into a single item that lists
+      -- all the Email addresses or telephone numbers.
+      -- itemGroupGroups :: [[[Field]]]
+      -- itemGroupGroups = groupBy sameItemGroupType itemGroups
+      -- itemGroupGroupFields = map mkItemGroupGroupField itemGroupGroups
+  in combinedFields ++ nonItems
 
--- Generate a broken field when something goes wrong
-brokenItemField :: String -> String -> Field
-brokenItemField s1 s2 =
-  Field { pangalan = "Broken Item Field: " ++ s1 ++ s2, attributes = [] }
+-- Make an item field from an item FieldItem record
+mkItemField :: FieldItem -> Field
+mkItemField FieldItem { labelMember = lMem, valueMember = vMem } =
+  let labelValue = itemValue lMem
+      labelStr = afterText lMem
+      attrValue = itemValue vMem
+  in Field { pangalan = labelStr ++ "-" ++ labelValue
+           , attributes = [mkSimpleAttribute attrValue] }
+mkItemField BrokenFieldItem { debugData = d } =
+  Field { pangalan = "Broken Field", attributes = [SimpleAttribute { name = d }] }
 
 -- Need to be sure it is an item field before you call this, otherwise
 -- you will get an exception
@@ -333,7 +339,7 @@ fieldToPair Field { pangalan = p, attributes = as } =
 
 instance ToJSON Field where
   toJSON f = let (s, v) = fieldToPair f in object [T.pack s .= v]
-  --  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
+--  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
 
 -- Safely get the last attribute of the field (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
