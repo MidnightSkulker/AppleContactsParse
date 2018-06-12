@@ -278,6 +278,16 @@ mkGroupFieldItem fs =
       smushedAttrs = intercalate "," attrs
   in Field { pangalan = fieldItemType ++ "S"
            , attributes = [mkSimpleAttribute smushedAttrs] }
+-- Build a single Field from a group of field of the same type (e.g. TEL)
+-- by choosing one of the group (the first one)
+mkSingleFieldItem :: [FieldItem] -> Field
+mkSingleFieldItem [] = error "mkSingleFieldItem []"
+mkSingleFieldItem fs =
+  let first = head fs
+      fieldItemType = getFieldItemType first
+      attr = getFieldTypeAttrValue first
+  in Field { pangalan = fieldItemType ++ "1"
+           , attributes = [mkSimpleAttribute attr]}
 
 -- All of the data for a Field Item, i.e. a FieldItemMember for both items:
 -- item2.TEL;type=pref:8472081772
@@ -334,8 +344,12 @@ combineItems fs =
       -- all the Email addresses or telephone numbers.
       fieldItemGroups :: [[FieldItem]]
       fieldItemGroups = groupBy sameFieldItemType (sortOn getFieldItemType fieldItems)
+      -- Choose one from each group to make representative Field.
+      singleFields :: [Field]
+      singleFields = map mkSingleFieldItem fieldItemGroups
+      -- Combine each group into an aggregate field item
       combinedItems = map mkGroupFieldItem fieldItemGroups
-  in combinedFields ++ nonItems ++ combinedItems
+  in combinedFields ++ nonItems ++ combinedItems ++ singleFields
 
 -- Make an item field from an item FieldItem record
 mkItemField :: FieldItem -> Field
