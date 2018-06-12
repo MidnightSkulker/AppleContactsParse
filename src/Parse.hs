@@ -322,7 +322,7 @@ combineItems fs =
       -- item2.X-ABLabel:Dad (Vignesh Jeyaraj)
       -- Note that the two members of the item group may come in either order.
       itemGroups :: [[Field]]
-      itemGroups = groupBy sameItemNumber items
+      itemGroups = groupBy sameItemNumber (sortOn pangalan items)
       -- Compute the information needed from ieach itemGroup
       fieldItems :: [FieldItem]
       fieldItems = map mkFieldItemFromList itemGroups
