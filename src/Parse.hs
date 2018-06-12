@@ -257,11 +257,6 @@ mkFieldItemMember m a inum ival =
 getFieldItemType :: FieldItem -> String
 getFieldItemType FieldItem { labelMember = l } = afterText l
 getFieldItemType BrokenFieldItem { debugData = d } = d
--- Get the field Item type
--- getFieldItemNumber :: FieldItem -> String
--- getFieldItemNumber FieldItem { labelMember = l } = itemNum l
--- getFieldItemNumber BrokenFieldItem { debugData = d } = d
-
 -- Determine if two field items have the same type
 sameFieldItemType :: FieldItem -> FieldItem -> Bool
 sameFieldItemType f1 f2 = getFieldItemType f1 == getFieldItemType f2
