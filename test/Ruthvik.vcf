@@ -10,6 +10,8 @@ item2.TEL;type=pref:8472081772
 item2.X-ABLabel:Dad (Vignesh Jeyaraj)
 item3.TEL:8474034147
 item3.X-ABLabel:Mom (Kasthuri Thangamariappan)
+item4.EMAIL;type=INTERNET;type=pref:gronk@gmail.com
+item4.X-ABLabel:Brother
 ADR;type=HOME;type=pref:;;16455 SW Estuary Dr. #208;Beaverton;OR;97006;USA
 Immunization:Yes
 BDAY:2014-06-09

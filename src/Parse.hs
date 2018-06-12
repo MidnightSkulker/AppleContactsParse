@@ -253,13 +253,15 @@ mkFieldItemMember m a inum ival =
 
 -- Get the field Item type
 getFieldItemType :: FieldItem -> String
-getFieldItemType = afterText . labelMember
+getFieldItemType FieldItem { labelMember = l } = afterText l
+getFieldItemType BrokenFieldItem { debugData = d } = d
 -- Determine if two field items have the same type
 sameFieldItemType :: FieldItem -> FieldItem -> Bool
 sameFieldItemType f1 f2 = getFieldItemType f1 == getFieldItemType f2
 -- Get the value of the attribute
 getFieldTypeAttrValue :: FieldItem -> String
-getFieldTypeAttrValue = itemValue . valueMember
+getFieldTypeAttrValue FieldItem { valueMember = v } = itemValue v
+getFieldTypeAttrValue BrokenFieldItem { debugData = d } = d
 -- Build a combined Field from a group of field of the same type (e.g. TEL)
 mkGroupFieldItem :: [FieldItem] -> Field
 mkGroupFieldItem [] = error "mkGroupFieldItem []"
