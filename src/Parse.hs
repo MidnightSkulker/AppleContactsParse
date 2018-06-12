@@ -24,7 +24,7 @@ import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
-import Data.List (partition, groupBy, find, intercalate)
+import Data.List (partition, groupBy, find, intercalate, sortOn)
 import Data.Maybe (isJust, fromJust)
 import RE (isItem, itemNumber)
 
@@ -205,31 +205,33 @@ urlField = do { optional itemPrefix
 -- A field has a name, and a list of attributes.
 data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show, Generic)
 
--- The VCF file has an unfortunate encoding for custom names for fields. Here is
--- and example of a card with custom names for telephone and E-mail fields:
--- BEGIN:VCARD
--- VERSION:3.0
--- PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN
--- N:Vignesh;Ruthvik;;;
--- FN:Ruthvik Vignesh
--- ORG:Kasalukuyang Estudyante;
--- item1.EMAIL;type=INTERNET;type=pref:vicky.008@gmail.com
--- item1.X-ABLabel:Dad
--- item2.TEL;type=pref:8472081772
--- item2.X-ABLabel:Dad (Vignesh Jeyaraj)
--- item3.TEL:8474034147
--- item3.X-ABLabel:Mom (Kasthuri Thangamariappan)
--- ADR;type=HOME;type=pref:;;16455 SW Estuary Dr. #208;Beaverton;OR;97006;USA
--- NOTE:Has Immunization Record\n
--- BDAY:2014-06-09
--- CATEGORIES:Address Book
--- UID:5f124cfb15813f50
--- X-ABUID:77230A65-1FBF-4BF8-B828-BB7CAA8BABF0:ABPerson
--- END:VCARD
---
--- Notice the EMAIL field (item1.Email). This is an E-mail field with the
--- custom label "Dad". It is split into two lines, thus it will result
--- in two fields in the encoding of the card.
+{-
+The VCF file has an unfortunate encoding for custom names for fields. Here is
+and example of a card with custom names for telephone and E-mail fields:
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN
+N:Vignesh;Ruthvik;;;
+FN:Ruthvik Vignesh
+ORG:Kasalukuyang Estudyante;
+item1.EMAIL;type=INTERNET;type=pref:vicky.008@gmail.com
+item1.X-ABLabel:Dad
+item2.TEL;type=pref:8472081772
+item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+item3.TEL:8474034147
+item3.X-ABLabel:Mom (Kasthuri Thangamariappan)
+ADR;type=HOME;type=pref:;;16455 SW Estuary Dr. #208;Beaverton;OR;97006;USA
+NOTE:Has Immunization Record\n
+BDAY:2014-06-09
+CATEGORIES:Address Book
+UID:5f124cfb15813f50
+X-ABUID:77230A65-1FBF-4BF8-B828-BB7CAA8BABF0:ABPerson
+END:VCARD
+
+Notice the EMAIL field (item1.Email). This is an E-mail field with the
+custom label "Dad". It is split into two lines, thus it will result
+in two fields in the encoding of the card.
+-}
 
 -- Data structure to represent the information from one part of an item
 -- field, i.e. either
@@ -255,6 +257,11 @@ mkFieldItemMember m a inum ival =
 getFieldItemType :: FieldItem -> String
 getFieldItemType FieldItem { labelMember = l } = afterText l
 getFieldItemType BrokenFieldItem { debugData = d } = d
+-- Get the field Item type
+-- getFieldItemNumber :: FieldItem -> String
+-- getFieldItemNumber FieldItem { labelMember = l } = itemNum l
+-- getFieldItemNumber BrokenFieldItem { debugData = d } = d
+
 -- Determine if two field items have the same type
 sameFieldItemType :: FieldItem -> FieldItem -> Bool
 sameFieldItemType f1 f2 = getFieldItemType f1 == getFieldItemType f2
@@ -326,7 +333,7 @@ combineItems fs =
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
       fieldItemGroups :: [[FieldItem]]
-      fieldItemGroups = groupBy sameFieldItemType fieldItems
+      fieldItemGroups = groupBy sameFieldItemType (sortOn getFieldItemType fieldItems)
       combinedItems = map mkGroupFieldItem fieldItemGroups
   in combinedFields ++ nonItems ++ combinedItems
 

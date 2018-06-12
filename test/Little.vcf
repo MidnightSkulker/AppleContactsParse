@@ -1,0 +1,15 @@
+BEGIN:VCARD
+N:Vignesh;Ruthvik;;;
+FN:Ruthvik Vignesh
+ORG:Kasalukuyang Estudyante;
+item1.EMAIL;type=INTERNET;type=pref:vicky.008@gmail.com
+item1.X-ABLabel:Dad
+item4.EMAIL;type=INTERNET;type=pref:gronk@gmail.com
+item4.X-ABLabel:Brother
+item2.TEL;type=pref:8472081772
+item2.X-ABLabel:Dad (Vignesh Jeyaraj)
+item3.TEL:8474034147
+item3.X-ABLabel:Mom (Kasthuri Thangamariappan)
+Immunization:Yes
+BDAY:2014-06-09
+END:VCARD
