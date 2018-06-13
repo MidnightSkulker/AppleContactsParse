@@ -1,10 +1,10 @@
 module Main where
 
 import Options.Applicative
-import System.IO
-import Parse
-import Test
-import Args
+import System.IO (hClose, hPutStrLn, hGetContents)
+import Parse (cards, vcf)
+import Test (test, jsonTest)
+import Args (Files(..), argAnalysis, commandLineOptions)
 
 main :: IO ()
 main = do { parsedOptions <- execParser commandLineOptions

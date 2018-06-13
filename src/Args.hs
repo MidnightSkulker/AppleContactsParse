@@ -2,10 +2,10 @@
 -- Parsing the arguments to the program
 module Args where
 
-import System.IO
+import System.IO (Handle, IOMode(..), stdin, stdout)
 import Options.Applicative
 import Data.Semigroup ((<>))
-import Files
+import Files (safeOpenFile)
 
 -- Parsed Arguments as a list.
 data Args = Args { args :: [Arg] } deriving (Show)
