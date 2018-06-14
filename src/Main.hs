@@ -4,23 +4,26 @@ import Options.Applicative
 import System.IO (hClose, hPutStrLn, hGetContents)
 import Parse (cards, vcf)
 import Test (test, jsonTest)
-import Args (Files(..), argAnalysis, commandLineOptions)
+import Args (Files(..), commandArgAnalysis, commandLineOptions, Command(..))
 
 main :: IO ()
-main = do { parsedOptions <- execParser commandLineOptions
-          ; analyzedOptions <- argAnalysis parsedOptions
+main = do { putStrLn ("Ready to parse command line options")
+          ; parsedOptions <- execParser commandLineOptions
+          ; analyzedOptions <- commandArgAnalysis parsedOptions
           ; case analyzedOptions of
               Left argError -> putStrLn (show argError)
-              Right files -> do { vcfInput <- hGetContents (input files)
-                                ; let json = jsonTest vcf vcfInput
-                                ; let vcf2 = test vcf vcfInput
-                                ; hPutStrLn (output files) json
-                                ; case vcf2 of
-                                    Left e -> putStrLn ("Error: " ++ show e)
-                                    Right v -> putStrLn ("Number of cards " ++ show (length (cards v)))
-                                ; hClose (input files)
-                                ; hClose (output files)
-                                }
+              Right cmd ->
+                do { let fs = files cmd
+                   ; vcfInput <- hGetContents (input fs)
+                   ; let json = jsonTest vcf vcfInput
+                   ; let vcf2 = test vcf vcfInput
+                   ; hPutStrLn (output fs) json
+                   ; case vcf2 of
+                       Left e -> putStrLn ("Error: " ++ show e)
+                       Right v -> putStrLn ("# of cards " ++ show (length (cards v)))
+                   ; hClose (input fs)
+                   ; hClose (output fs)
+                   }
           }
 
 m :: IO ()

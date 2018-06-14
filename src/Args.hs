@@ -5,79 +5,102 @@ module Args where
 import System.IO (Handle, IOMode(..), stdin, stdout)
 import Options.Applicative
 import Data.Semigroup ((<>))
+import Data.List (partition)
 import Files (safeOpenFile)
 
 -- Parsed Arguments as a list.
-data Args = Args { args :: [Arg] } deriving (Show)
+data Args = Args { fileArgs :: [Arg], switchArgs :: [Arg] } deriving (Show)
 -- Number of parsed args
 nArgs :: Args -> Int
-nArgs Args { args = as } = length as
+nArgs Args { fileArgs = fs, switchArgs = ss } = length fs + length ss
 
-data Arg = VCF String | JSON String | Positional String deriving (Show)
+data Arg = VCF String | JSON String
+         | Positional String | NoPhoto Bool deriving (Show)
+
+-- Get the underlying string out of an argument
 argString :: Arg -> String
 argString (VCF s) = s
 argString (JSON s) = s
 argString (Positional s) = s
+argString (NoPhoto _) = "No Photo"
+-- Determine if the argument is for a VCF file
 isVCF :: Arg -> Bool
 isVCF (VCF _s) = True
 isVCF _ = False
+-- Determine if the argument is for a Positional file (could be VCF or JSON)
 isPositional :: Arg -> Bool
 isPositional (Positional _s) = True
 isPositional _ = False
+-- Determine if the argument is for a JSON file
 isJSON :: Arg -> Bool
 isJSON (JSON _s) = True
 isJSON _ = False
+-- There are three types of arguments that deal with the input and output files
+-- (Positional, JSON, and VCF). The rest of the arguments are various switches.
+isFileArgument :: Arg -> Bool
+isFileArgument (JSON _s) = True
+isFileArgument (Positional _s) = True
+isFileArgument (VCF _s) = True
+isFileArgument _ = False
 
 -- Parse the command line options
-commandLineOptions :: ParserInfo Args
+commandLineOptions :: ParserInfo [Arg]
 commandLineOptions = info (parseArgList <**> helper)
       ( fullDesc <> progDesc "Convert Mac Address Book to JSON" <> header "Gronk" )
 
 -- The VCF file as an explicit parameter
 vcfExplicit :: Parser Arg
 vcfExplicit =
-  VCF <$> strOption ( long "vcf" <> short 'v' <> metavar "STRING" <> help "input .vcf" )
+  VCF <$> strOption ( long "vcf" <> short 'v' <> metavar "STRING" <> help "input .vcf file" )
 -- A positional parameter
 positional :: Parser Arg
 positional = Positional <$> argument str (metavar "FILE")
 -- The JSON file as an explicit parameter
 jsonExplicit :: Parser Arg
 jsonExplicit =
-  JSON <$> strOption( long "json" <> short 'j' <> metavar "STRING" <> help "output .json" )
+  JSON <$> strOption( long "json" <> short 'j' <> metavar "STRING" <> help "output .json file" )
+-- Parameter to eliminate the Photos from the output contacts
+noPhoto :: Parser Arg
+noPhoto = NoPhoto <$> switch ( long "NoPhoto" <> short 'p' <> help "Eliminate photos from output JSON" )
 
 -- Any of the paremeter options
 anyArg :: Parser Arg
-anyArg = vcfExplicit <|> jsonExplicit <|> positional
+anyArg = vcfExplicit <|> jsonExplicit <|> positional <|> noPhoto
 
 -- Return a list of parsed parameters
-parseArgList :: Parser Args
-parseArgList = Args <$> many anyArg
+parseArgList :: Parser [Arg]
+parseArgList = many anyArg
 
 data Files = Files { input :: Handle, output :: Handle } deriving (Show)
 -- A filter command has stdin as input and stdio as output
 filterCmd :: Files
 filterCmd = Files { input = stdin, output = stdout }
 
+-- The command has a File portion and a Switch Portion
+data Command = Command { files :: Files, switches :: [Arg] } deriving (Show)
+
+-- The data for an individual argument error.
 data ArgError = IOArgError IOError | ArgError String deriving (Show)
+-- The data for several argument erros.
 data ArgErrors = ArgErrors { errors :: [String] } deriving (Show)
 
--- Analyze the parsed arguments
-argAnalysis :: Args -> IO (Either ArgError Files)
+-- Analyze the parsed arguments that are file arguments
+fileArgAnalysis :: [Arg] -> IO (Either ArgError Files)
 -- No arguments: It is a filter command
-argAnalysis (Args []) = return (Right filterCmd)
+fileArgAnalysis [] = return (Right filterCmd)
 -- One argument, it is an explicit VCF parameter, or a positional paramter.
 -- Output is assumed to be stdout.
-argAnalysis (Args [a]) | isVCF a || isPositional a =
+fileArgAnalysis [a] | isVCF a || isPositional a =
   do { eh <- safeOpenFile (argString a) ReadMode
      ; return (either (Left . IOArgError . id) (\h -> Right (Files {input = h, output = stdout})) eh)
      }
 -- One argument, it is an explicit JSON parameter. Input is assumed to be stdout.
-argAnalysis (Args [a]) | isJSON a =
+fileArgAnalysis [a] | isJSON a =
   do eh <- safeOpenFile (argString a) WriteMode
      return (either (Left . IOArgError . id) (\h -> Right (Files {input = stdin, output = h})) eh)
 -- Two arguments, the first is a VCF or positional (so assumed to be VCF),
 -- the second is JSON or positional (so assumed to be JSON)
-argAnalysis (Args [a,b]) | (isVCF a || isPositional a) && (isJSON b || isPositional b) =
+fileArgAnalysis [a,b] | (isVCF a || isPositional a) && (isJSON b || isPositional b) =
   do { eah <- safeOpenFile (argString a) ReadMode
      ; case eah of
          Left e -> return (Left (IOArgError e))
@@ -89,13 +112,13 @@ argAnalysis (Args [a,b]) | (isVCF a || isPositional a) && (isJSON b || isPositio
      }
 -- Two arguments, the first is a VCF or positional (so assumed to be VCF),
 -- and the second is VCF. This is an error
-argAnalysis (Args [a,b]) | (isVCF a || isPositional a) && isJSON b =
+fileArgAnalysis [a,b] | (isVCF a || isPositional a) && isJSON b =
   return (Left (ArgError "Two VCF Files Specified"))
 -- Two arguments, the first is JSON, and the second is JSON. This is an error
-argAnalysis (Args [a,b]) | isJSON a && isJSON b =
+fileArgAnalysis [a,b] | isJSON a && isJSON b =
   return (Left (ArgError "Two JSON Files Specified"))
 -- Two arguments, the first is JSON and the second is VCF or Positional (so assumed to be VCF in this case)
-argAnalysis (Args [a,b]) | isJSON a && (isVCF b || isPositional b) =
+fileArgAnalysis [a,b] | isJSON a && (isVCF b || isPositional b) =
   do { eah <- safeOpenFile (argString a) WriteMode
      ; case eah of
          Left e -> return (Left (IOArgError e))
@@ -105,6 +128,18 @@ argAnalysis (Args [a,b]) | isJSON a && (isVCF b || isPositional b) =
                             Right bh -> return (Right (Files {input = bh, output = ah}))
                         }
      }
+
 -- Three or more arguments is an error
-argAnalysis (Args _as) =
-  return (Left (ArgError "More that two parameters specified"))
+fileArgAnalysis _as = return (Left (ArgError "More than two arguments given"))
+
+-- Now do the command analysis, including both file and switch arguments
+commandArgAnalysis :: [Arg] -> IO (Either ArgError Command)
+commandArgAnalysis args =
+  do { putStrLn (">>>> commandArgAnalysis: " ++ show args)
+     ; let (fileArgz, switchArgz) = partition isFileArgument args
+     ; putStrLn ("Analyziing file arguments: " ++ show fileArgz)
+     ; filez <- fileArgAnalysis fileArgz
+     ; return (case filez of
+                 Right fs -> Right (Command {files = fs, switches = switchArgz})
+                 Left e -> Left e)
+     }
