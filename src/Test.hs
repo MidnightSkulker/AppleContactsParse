@@ -9,6 +9,7 @@ import Data.Text as T (pack)
 import Data.Either ()
 import Data.Either.Utils (fromRight)
 import Parse
+import Args (defaultFlags)
 
 -- Run the address book parse on a test input
 test,t :: GenParser Char () a -> String -> Either ParseError a
@@ -22,10 +23,10 @@ parsTest :: (ToJSON a) => GenParser Char () a -> String -> a
 parsTest p s = fromRight (test p s)
 
 t1 :: String
-t1 = jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
+t1 = jsonTest (vcf defaultFlags) "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
 
 t2 :: String
-t2 = jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
+t2 = jsonTest (vcf defaultFlags) "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
 
 -- Some Test values
 

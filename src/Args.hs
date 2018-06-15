@@ -8,6 +8,20 @@ import Data.Semigroup ((<>))
 import Data.List (partition)
 import Files (safeOpenFile)
 
+-- Flags that can be set
+data Flags = Flags { noPhotos :: Bool } deriving (Show)
+-- Default is all the flags false
+defaultFlags :: Flags
+defaultFlags = Flags { noPhotos = False }
+-- Set the appropriate flag according to the argument
+flagSetter :: Flags -> Arg -> Flags
+flagSetter f (NoPhoto b) = f { noPhotos = b}
+flagSetter f _ = f
+-- Analyze the flag arguments, setting a bit in the Flags structure for
+-- each flag Argument
+flagArgAnalysis :: [Arg] -> Flags -> Flags
+flagArgAnalysis args f = foldl flagSetter f args
+
 -- Parsed Arguments as a list.
 data Args = Args { fileArgs :: [Arg], switchArgs :: [Arg] } deriving (Show)
 -- Number of parsed args
@@ -78,7 +92,7 @@ filterCmd :: Files
 filterCmd = Files { input = stdin, output = stdout }
 
 -- The command has a File portion and a Switch Portion
-data Command = Command { files :: Files, switches :: [Arg] } deriving (Show)
+data Command = Command { files :: Files, flags :: Flags } deriving (Show)
 
 -- The data for an individual argument error.
 data ArgError = IOArgError IOError | ArgError String deriving (Show)
@@ -137,8 +151,9 @@ fileArgAnalysis _as = return (Left (ArgError "More than two arguments given"))
 commandArgAnalysis :: [Arg] -> IO (Either ArgError Command)
 commandArgAnalysis args =
   do { let (fileArgz, switchArgz) = partition isFileArgument args
+     ; let flagz = flagArgAnalysis switchArgz defaultFlags
      ; filez <- fileArgAnalysis fileArgz
      ; return (case filez of
-                 Right fs -> Right (Command {files = fs, switches = switchArgz})
+                 Right fs -> Right (Command {files = fs, flags = flagz})
                  Left e -> Left e)
      }

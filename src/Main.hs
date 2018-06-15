@@ -17,7 +17,7 @@ main = do { putStrLn ("Ready to parse command line options")
               Right cmd ->
                 do { let fs = files cmd
                    ; vcfInput <- hGetContents (input fs)
-                   ; let ejson = test (vcf (switches cmd)) vcfInput
+                   ; let ejson = test (vcf (flags cmd)) vcfInput
                    ; case ejson of
                        Left e -> putStrLn ("Error: " ++ show e)
                        Right json ->
