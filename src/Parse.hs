@@ -424,8 +424,8 @@ simpleField = do { a <- attributeName
                  ; return Field { pangalan = a, attributes = as } }
 
 -- Parse a field that may have continuation lines.
-field :: GenParser Char st Field
-field = try urlField <|> nonUrlField
+field :: Flags -> GenParser Char st Field
+field _flg = try urlField <|> nonUrlField
   where -- Add the continuation data to the field being parsed.
         addContinuation :: [String] -> Field -> Field
         addContinuation [] f = f
@@ -469,11 +469,11 @@ instance ToJSON Card where
 --            (p, mkObjectFromPairable attributeToPair as)
 
 -- Parse an card.
-card :: GenParser Char st Card
-card = do { openCard
-          ; fs <- field `manyTill` (try closeCard)
-          ; return Card { fieldz = combineItems fs }
-          }
+card :: Flags -> GenParser Char st Card
+card flg = do { openCard
+              ; fs <- field flg `manyTill` (try closeCard)
+              ; return Card { fieldz = combineItems fs }
+              }
 
 -- A VCF file is a list of cards.
 data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
@@ -489,8 +489,8 @@ instance ToJSON VCF where
 -- END:VCARD
 
 vcf :: Flags -> GenParser Char st VCF
-vcf _args =
-  do { es <- card `sepEndBy` eol
+vcf flg =
+  do { es <- card flg `sepEndBy` eol
      ; eof
      ; return VCF { cards = es }
      }

@@ -47,7 +47,7 @@ attrs1 = [aa, ba, ca]
 f1 :: Field
 f1 = Field { pangalan = "f1", attributes = attrs1 }
 f2 :: Field
-f2 = parsTest field "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
+f2 = parsTest (field defaultFlags) "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/"
 f3 :: Field
 f3 = Field { pangalan = "hhh", attributes = [aa, ba, ca] }
 -- Because aeson uses a hashmap, it will only record one attribute with
@@ -56,19 +56,19 @@ f4 :: Field
 f4 = Field { pangalan = "iii", attributes = [aa, aa, aa] }
 
 f5 :: Field
-f5 = parsTest field "ab:\n"
+f5 = parsTest (field defaultFlags) "ab:\n"
 f5v :: Value
 f5v = toJSON f5
 f5e :: ByteString
 f5e = encode f5v
 f6 :: Field
-f6 = parsTest field "ORG:Macys;\n"
+f6 = parsTest (field defaultFlags) "ORG:Macys;\n"
 f6v :: Value
 f6v = toJSON f6
 f6e :: ByteString
 f6e = encode f6v
 f7 :: Field
-f7 = parsTest field "ORG:Macys-\n kdkdkdkd\n"
+f7 = parsTest (field defaultFlags) "ORG:Macys-\n kdkdkdkd\n"
 f7v :: Value
 f7v = toJSON f7
 f7e :: ByteString
@@ -84,5 +84,4 @@ attrs2 :: Value
 attrs2 = mkObjectFromPairable attributeToPair [aa, ba, ca]
 
 card1 :: Card
-card1 = parsTest card "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
-
+card1 = parsTest (card defaultFlags) "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
