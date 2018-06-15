@@ -52,13 +52,13 @@ spec = do
       jsonTest card "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
 
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n  (Wednesday)\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09-\n Wednesday\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":\"2014-06-09-Wednesday\"}}]"
+      jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09-\n Wednesday\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":\"2014-06-09-Wednesday\"}}]"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}}]"
+      jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}}]"
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
-      jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}},{\"fields\":{\"ORG\":\"Target\"}}]"
+      jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}},{\"fields\":{\"ORG\":\"Target\"}}]"
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
       jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":[{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"

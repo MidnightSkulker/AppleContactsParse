@@ -137,9 +137,7 @@ fileArgAnalysis _as = return (Left (ArgError "More than two arguments given"))
 commandArgAnalysis :: [Arg] -> IO (Either ArgError Command)
 commandArgAnalysis args =
   do { let (fileArgz, switchArgz) = partition isFileArgument args
-     ; putStrLn ("Analyziing file arguments: " ++ show fileArgz)
      ; filez <- fileArgAnalysis fileArgz
-     ; putStrLn ("Analyzed File Arguments: " ++ show filez)
      ; return (case filez of
                  Right fs -> Right (Command {files = fs, switches = switchArgz})
                  Left e -> Left e)

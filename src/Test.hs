@@ -22,10 +22,10 @@ parsTest :: (ToJSON a) => GenParser Char () a -> String -> a
 parsTest p s = fromRight (test p s)
 
 t1 :: String
-t1 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
+t1 = jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD"
 
 t2 :: String
-t2 = jsonTest vcf "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
+t2 = jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD"
 
 -- Some Test values
 

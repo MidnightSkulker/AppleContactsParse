@@ -27,6 +27,7 @@ import Data.Char (isAlphaNum, isNumber)
 import Data.List (partition, groupBy, find, intercalate, sortOn)
 import Data.Maybe (isJust, fromJust)
 import RE (isItem, itemNumber)
+import Args (Arg)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -487,8 +488,9 @@ instance ToJSON VCF where
 -- or just
 -- END:VCARD
 
-vcf :: GenParser Char st VCF
-vcf = do { es <- card `sepEndBy` eol
-         ; eof
-         ; return VCF { cards = es }
-         }
+vcf :: [Arg] -> GenParser Char st VCF
+vcf _args =
+  do { es <- card `sepEndBy` eol
+     ; eof
+     ; return VCF { cards = es }
+     }

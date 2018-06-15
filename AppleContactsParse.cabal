@@ -43,6 +43,7 @@ test-suite unit-tests
                        hspec-discover,
                        parsec,
                        bytestring,
+                       optparse-applicative,
                        aeson,
                        network-uri,
                        text,
