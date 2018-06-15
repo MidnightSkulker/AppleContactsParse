@@ -1,9 +1,11 @@
 module Main where
 
 import Options.Applicative
+import Data.Aeson as Aeson (encode)
+import Data.ByteString.Lazy.Char8 as DBLC8 (unpack)
 import System.IO (hClose, hPutStrLn, hGetContents)
 import Parse (cards, vcf)
-import Test (test, jsonTest)
+import Test (test)
 import Args (Files(..), commandArgAnalysis, commandLineOptions, Command(..))
 
 main :: IO ()
@@ -15,12 +17,13 @@ main = do { putStrLn ("Ready to parse command line options")
               Right cmd ->
                 do { let fs = files cmd
                    ; vcfInput <- hGetContents (input fs)
-                   ; let json = jsonTest vcf vcfInput
-                   ; let vcf2 = test vcf vcfInput
-                   ; hPutStrLn (output fs) json
-                   ; case vcf2 of
+                   ; let ejson = test vcf vcfInput
+                   ; case ejson of
                        Left e -> putStrLn ("Error: " ++ show e)
-                       Right v -> putStrLn ("# of cards " ++ show (length (cards v)))
+                       Right json ->
+                         do { hPutStrLn (output fs) (DBLC8.unpack (encode json))
+                            ; putStrLn ("# of cards " ++ show (length (cards json)))
+                            }
                    ; hClose (input fs)
                    ; hClose (output fs)
                    }
