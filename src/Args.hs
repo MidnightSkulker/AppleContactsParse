@@ -61,11 +61,12 @@ jsonExplicit =
   JSON <$> strOption( long "json" <> short 'j' <> metavar "STRING" <> help "output .json file" )
 -- Parameter to eliminate the Photos from the output contacts
 noPhoto :: Parser Arg
-noPhoto = NoPhoto <$> switch ( long "NoPhoto" <> short 'p' <> help "Eliminate photos from output JSON" )
+noPhoto = NoPhoto <$> flag' False (long "NoPhoto")
 
 -- Any of the paremeter options
 anyArg :: Parser Arg
 anyArg = vcfExplicit <|> jsonExplicit <|> positional <|> noPhoto
+-- anyArg = noPhoto
 
 -- Return a list of parsed parameters
 parseArgList :: Parser [Arg]
@@ -139,6 +140,7 @@ commandArgAnalysis args =
      ; let (fileArgz, switchArgz) = partition isFileArgument args
      ; putStrLn ("Analyziing file arguments: " ++ show fileArgz)
      ; filez <- fileArgAnalysis fileArgz
+     ; putStrLn ("Analyzed File Arguments: " ++ show filez)
      ; return (case filez of
                  Right fs -> Right (Command {files = fs, switches = switchArgz})
                  Left e -> Left e)

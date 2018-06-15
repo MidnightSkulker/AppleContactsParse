@@ -2,7 +2,7 @@
 module Test where
 
 import Data.Aeson as Aeson (ToJSON(..))
-import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec (parse, GenParser, ParseError)
 import Data.ByteString.Lazy.Char8 as DBLC8 (ByteString, unpack)
 import Data.Aeson as Aeson (object, (.=), encode, Value(..), KeyValue(..))
 import Data.Text as T (pack)
