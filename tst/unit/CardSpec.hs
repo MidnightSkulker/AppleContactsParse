@@ -4,7 +4,6 @@ module CardSpec where
 import Test.Hspec
 import Test
 import Parse
-import Args (defaultFlags)
 import Text.ParserCombinators.Parsec
 
 gronk :: GenParser Char st String
@@ -17,49 +16,49 @@ spec = do
       jsonTest attribute "a=b" `shouldBe` "{\"a\":\"b\"}"
 
     it "ab:\n" $
-      jsonTest (field defaultFlags) "ab:\n" `shouldBe` "{\"ab\":\"\"}"
+      jsonTest (field []) "ab:\n" `shouldBe` "{\"ab\":\"\"}"
 
     it "ab:c\n" $
-      jsonTest (field defaultFlags) "ab:c\n" `shouldBe` "{\"ab\":\"c\"}"
+      jsonTest (field []) "ab:c\n" `shouldBe` "{\"ab\":\"c\"}"
 
     it "N:;;;;\n" $
-      jsonTest (field defaultFlags) "N:;;;;\n" `shouldBe` "{\"N\":[\"\",\"\",\"\",\"\",\"\"]}"
+      jsonTest (field []) "N:;;;;\n" `shouldBe` "{\"N\":[\"\",\"\",\"\",\"\",\"\"]}"
 
     it "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n" $
-      jsonTest (field defaultFlags) "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n" `shouldBe` "{\"PRODID\":\"-//Apple Inc.//Mac OS X 10.13.4//EN\"}"
+      jsonTest (field []) "PRODID:-//Apple Inc.//Mac OS X 10.13.4//EN\n" `shouldBe` "{\"PRODID\":\"-//Apple Inc.//Mac OS X 10.13.4//EN\"}"
 
     it ":kdkdk\n" $ -- Should fail (left "(unknown)")
-      jsonTest (field defaultFlags) ":kdkdk\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \":\"\nexpecting \"item\" or \"URL;\""
+      jsonTest (field []) ":kdkdk\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \":\"\nexpecting \"item\" or \"URL;\""
 
     it "ORG:Macys;\n" $
-      jsonTest (field defaultFlags) "ORG:Macys;\n" `shouldBe` "{\"ORG\":[\"Macys\",\"\"]}"
+      jsonTest (field []) "ORG:Macys;\n" `shouldBe` "{\"ORG\":[\"Macys\",\"\"]}"
 
     it "\n" $ -- Should fail, empty line not allowed
-      jsonTest (field defaultFlags) "\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
+      jsonTest (field []) "\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
 
     it "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" $
-      jsonTest (field defaultFlags) "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" `shouldBe` "{\"TEL\":[{\"type\":\"CELL\"},{\"type\":\"VOICE\"},{\"type\":\"pref\"},\"15036451141\"]}"
+      jsonTest (field []) "TEL;type=CELL;type=VOICE;type=pref:15036451141\n" `shouldBe` "{\"TEL\":[{\"type\":\"CELL\"},{\"type\":\"VOICE\"},{\"type\":\"pref\"},\"15036451141\"]}"
 
     it "ORG:Macys-;\n kdkdkdkd\n" $
-      jsonTest (field defaultFlags) "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"-kdkdkdkd\"]}"
+      jsonTest (field []) "ORG:Macys;\n -kdkdkdkd\n" `shouldBe` "{\"ORG\":[\"Macys\",\"-kdkdkdkd\"]}"
 
     it "ORG:Macys--\n mcmcmcmc\n" $
-      jsonTest (field defaultFlags) "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":\"Macys--mcmcmcmc\"}"
+      jsonTest (field []) "ORG:Macys--\n mcmcmcmc\n" `shouldBe` "{\"ORG\":\"Macys--mcmcmcmc\"}"
 
     it "\n mcmcmcmc\n" $
-      jsonTest (field defaultFlags) "\n mcmcmcmc\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
+      jsonTest (field []) "\n mcmcmcmc\n" `shouldBe` "\"parse Failure\" (line 1, column 1):\nunexpected \"\\n\"\nexpecting \"item\" or \"URL;\""
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" $
-      jsonTest (card defaultFlags) "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
+      jsonTest (card []) "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
 
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n  (Wednesday)\nNOTE:Has Immunization Record\nEND:VCARD" $
-      jsonTest (vcf defaultFlags) "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09-\n Wednesday\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":\"2014-06-09-Wednesday\"}}]"
+      jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09-\n Wednesday\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":\"2014-06-09-Wednesday\"}}]"
 
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD" $
-      jsonTest (vcf defaultFlags) "BEGIN:VCARD\nORG:Macys\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}}]"
+      jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}}]"
 
     it "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:TargetEND:VCARD" $
-      jsonTest (vcf defaultFlags) "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}},{\"fields\":{\"ORG\":\"Target\"}}]"
+      jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys\nEND:VCARD\nBEGIN:VCARD\nORG:Target\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":\"Macys\"}},{\"fields\":{\"ORG\":\"Target\"}}]"
 
     it "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" $
       jsonTest urlField "URL;type=WORK;type=pref:mychart.tpcllp.com/MyChart/" `shouldBe` "{\"mychart.tpcllp.com/MyChart/\":[{\"type\":\"WORK\"},{\"type\":\"pref\"}]}"

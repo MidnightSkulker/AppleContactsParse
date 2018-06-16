@@ -9,19 +9,27 @@ import Data.List (partition)
 import Files (safeOpenFile)
 
 -- Flags that can be set
+-- The fieldNames is for the list of field names affected by the flags
 data Flags = Flags { noPhotos :: Bool } deriving (Show)
+type FieldNames = [String]
 -- Default is all the flags false
 defaultFlags :: Flags
 defaultFlags = Flags { noPhotos = False }
 -- Set the appropriate flag according to the argument
 flagSetter :: Flags -> Arg -> Flags
-flagSetter f (NoPhoto b) = f { noPhotos = b}
+flagSetter f (NoPhoto b) = f { noPhotos = b }
 flagSetter f _ = f
 -- Analyze the flag arguments, setting a bit in the Flags structure for
 -- each flag Argument
 flagArgAnalysis :: [Arg] -> Flags -> Flags
 flagArgAnalysis args f = foldl flagSetter f args
-
+-- Compute field names from the flag arguments
+flagField :: Arg -> String
+flagField (NoPhoto True) = "PHOTO"
+flagField _ = "None***"
+flagFields :: [Arg] -> FieldNames
+flagFields = map flagField
+  
 -- Parsed Arguments as a list.
 data Args = Args { fileArgs :: [Arg], switchArgs :: [Arg] } deriving (Show)
 -- Number of parsed args
@@ -92,7 +100,9 @@ filterCmd :: Files
 filterCmd = Files { input = stdin, output = stdout }
 
 -- The command has a File portion and a Switch Portion
-data Command = Command { files :: Files, flags :: Flags } deriving (Show)
+data Command = Command { files :: Files
+                       , flags :: Flags
+                       , fieldNames :: [String] } deriving (Show)
 
 -- The data for an individual argument error.
 data ArgError = IOArgError IOError | ArgError String deriving (Show)
@@ -154,6 +164,9 @@ commandArgAnalysis args =
      ; let flagz = flagArgAnalysis switchArgz defaultFlags
      ; filez <- fileArgAnalysis fileArgz
      ; return (case filez of
-                 Right fs -> Right (Command {files = fs, flags = flagz})
+                 Right fs -> Right (Command { files = fs
+                                            , flags = flagz
+                                            , fieldNames = flagFields switchArgz
+                                            })
                  Left e -> Left e)
      }

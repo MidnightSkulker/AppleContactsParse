@@ -27,7 +27,7 @@ import Data.Char (isAlphaNum, isNumber)
 import Data.List (partition, groupBy, find, intercalate, sortOn)
 import Data.Maybe (isJust, fromJust)
 import RE (isItem, itemNumber)
-import Args (Flags)
+import Args (FieldNames)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -320,8 +320,8 @@ mkFieldItemFromList fs = BrokenFieldItem { debugData = show fs }
 
 -- The following function will find both of these fields and combine
 -- them into one field. Similar remarks apply to the telephone fields.
-combineItems :: [Field] -> [Field]
-combineItems fs =
+combineItems :: FieldNames -> [Field] -> [Field]
+combineItems flg fs =
   let (items, nonItems) = partition isFieldItem fs
       -- Get the item groups, i.e. two fields of the form
       -- item2.TEL;type=pref:8472081772
@@ -424,8 +424,8 @@ simpleField = do { a <- attributeName
                  ; return Field { pangalan = a, attributes = as } }
 
 -- Parse a field that may have continuation lines.
-field :: Flags -> GenParser Char st Field
-field _flg = try urlField <|> nonUrlField
+field :: FieldNames -> GenParser Char st Field
+field _fns = try urlField <|> nonUrlField
   where -- Add the continuation data to the field being parsed.
         addContinuation :: [String] -> Field -> Field
         addContinuation [] f = f
@@ -469,10 +469,10 @@ instance ToJSON Card where
 --            (p, mkObjectFromPairable attributeToPair as)
 
 -- Parse an card.
-card :: Flags -> GenParser Char st Card
-card flg = do { openCard
-              ; fs <- field flg `manyTill` (try closeCard)
-              ; return Card { fieldz = combineItems fs }
+card :: FieldNames -> GenParser Char st Card
+card fns = do { openCard
+              ; fs <- field fns `manyTill` (try closeCard)
+              ; return Card { fieldz = combineItems fns fs }
               }
 
 -- A VCF file is a list of cards.
@@ -488,9 +488,9 @@ instance ToJSON VCF where
 -- or just
 -- END:VCARD
 
-vcf :: Flags -> GenParser Char st VCF
-vcf flg =
-  do { es <- card flg `sepEndBy` eol
+vcf :: FieldNames -> GenParser Char st VCF
+vcf fns =
+  do { es <- card fns `sepEndBy` eol
      ; eof
      ; return VCF { cards = es }
      }
