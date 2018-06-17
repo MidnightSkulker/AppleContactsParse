@@ -318,11 +318,24 @@ mkFieldItemFromList :: [Field] -> FieldItem
 mkFieldItemFromList [f1, f2] = mkFieldItem f1 f2
 mkFieldItemFromList fs = BrokenFieldItem { debugData = show fs }
 
+-- Produce a Field filter from the Flags. This will filter out that field
+-- Currently only does one filter
+mkFieldFilter :: String -> (Field -> Bool)
+mkFieldFilter fname = \f ->  pangalan f /= fname
+mkFieldFilters :: [String] -> [Field -> Bool]
+mkFieldFilters fns = map mkFieldFilter fns
+applyFieldFilter :: (Field -> Bool) -> [Field] -> [Field]
+applyFieldFilter fltr fs = filter fltr fs
+applyFieldFilters :: [Field -> Bool] -> [Field] -> [Field]
+applyFieldFilters fltrs fs = foldl (\fz fltr -> applyFieldFilter fltr fz) fs fltrs
+
 -- The following function will find both of these fields and combine
 -- them into one field. Similar remarks apply to the telephone fields.
 combineItems :: FieldNames -> [Field] -> [Field]
-combineItems flg fs =
-  let (items, nonItems) = partition isFieldItem fs
+combineItems fldNames fs =
+  let filteredFields :: [Field]
+      filteredFields =applyFieldFilters (mkFieldFilters fldNames) fs
+      (items, nonItems) = partition isFieldItem filteredFields
       -- Get the item groups, i.e. two fields of the form
       -- item2.TEL;type=pref:8472081772
       -- item2.X-ABLabel:Dad (Vignesh Jeyaraj)

@@ -25,7 +25,7 @@ flagArgAnalysis :: [Arg] -> Flags -> Flags
 flagArgAnalysis args f = foldl flagSetter f args
 -- Compute field names from the flag arguments
 flagField :: Arg -> String
-flagField (NoPhoto True) = "PHOTO"
+flagField (NoPhoto _) = "PHOTO"
 flagField _ = "None***"
 flagFields :: [Arg] -> FieldNames
 flagFields = map flagField
