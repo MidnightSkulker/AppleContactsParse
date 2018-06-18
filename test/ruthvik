@@ -1,4 +1,4 @@
 #!/bin/bash
 set -v
-AppleContactsParse --vcf=test/Ruthvik.vcf --json=outputs/Ruthvik.json --NoPhoto --NoProdID --NoABUID --NoN
+AppleContactsParse --vcf=test/Ruthvik.vcf --json=outputs/Ruthvik.json --NoPhoto --NoProdID --NoABUID --NoN --NoAdr
 cat outputs/Ruthvik.json | jq '.'

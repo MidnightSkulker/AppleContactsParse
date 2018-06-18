@@ -28,6 +28,7 @@ flagField :: Arg -> String
 flagField (NoPhoto _) = "PHOTO"
 flagField (NoProdID _) = "PRODID"
 flagField (NoABUID _) = "X-ABUID"
+flagField (NoAdr _) = "ADR"
 flagField (NoN _) = "N"
 flagField _ = "None***"
 flagFields :: [Arg] -> FieldNames
@@ -41,7 +42,7 @@ nArgs Args { fileArgs = fs, switchArgs = ss } = length fs + length ss
 
 data Arg = VCF String | JSON String
          | Positional String | NoPhoto Bool | NoProdID Bool | NoABUID Bool
-         | NoN Bool
+         | NoN Bool | NoAdr Bool
            deriving (Show)
 
 -- Get the underlying string out of an argument
@@ -52,6 +53,7 @@ argString (Positional s) = s
 argString (NoPhoto _) = "No Photo"
 argString (NoProdID _) = "No ProdID"
 argString (NoABUID _) = "No ABUID"
+argString (NoAdr _) = "No Adr"
 argString (NoN _) = "No N"
 -- Determine if the argument is for a VCF file
 isVCF :: Arg -> Bool
@@ -101,6 +103,10 @@ noProdID = NoProdID <$> flag' False (long "NoProdID")
 noABUID :: Parser Arg
 noABUID = NoABUID <$> flag' False (long "NoABUID")
 
+-- Parameter to eliminate the X-ABUID field from the output contacts
+noAdr :: Parser Arg
+noAdr = NoAdr <$> flag' False (long "NoAdr")
+
 -- Parameter to eliminate the N field from the output contacts
 noN :: Parser Arg
 noN = NoN <$> flag' False (long "NoN")
@@ -108,7 +114,7 @@ noN = NoN <$> flag' False (long "NoN")
 -- Any of the paremeter options
 anyArg :: Parser Arg
 anyArg = vcfExplicit <|> jsonExplicit <|> positional <|>
-         noPhoto <|> noProdID <|> noABUID <|> noN
+         noPhoto <|> noProdID <|> noABUID <|> noN <|> noAdr
 
 -- Return a list of parsed parameters
 parseArgList :: Parser [Arg]
