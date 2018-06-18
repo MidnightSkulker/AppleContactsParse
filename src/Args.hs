@@ -40,6 +40,7 @@ data Args = Args { fileArgs :: [Arg], switchArgs :: [Arg] } deriving (Show)
 nArgs :: Args -> Int
 nArgs Args { fileArgs = fs, switchArgs = ss } = length fs + length ss
 
+-- FIX ME: Looks like these Bool arguments are redundant.
 data Arg = VCF String | JSON String
          | Positional String | NoPhoto Bool | NoProdID Bool | NoABUID Bool
          | NoN Bool | NoAdr Bool
