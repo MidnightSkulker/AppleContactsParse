@@ -17,7 +17,7 @@ defaultFlags :: Flags
 defaultFlags = Flags { noPhotos = False }
 -- Set the appropriate flag according to the argument
 flagSetter :: Flags -> Arg -> Flags
-flagSetter f (NoPhoto b) = f { noPhotos = b }
+flagSetter f (NoPhoto _) = f { noPhotos = True }
 flagSetter f _ = f
 -- Analyze the flag arguments, setting a bit in the Flags structure for
 -- each flag Argument
@@ -26,6 +26,9 @@ flagArgAnalysis args f = foldl flagSetter f args
 -- Compute field names from the flag arguments
 flagField :: Arg -> String
 flagField (NoPhoto _) = "PHOTO"
+flagField (NoProdID _) = "PRODID"
+flagField (NoABUID _) = "X-ABUID"
+flagField (NoN _) = "N"
 flagField _ = "None***"
 flagFields :: [Arg] -> FieldNames
 flagFields = map flagField
@@ -37,7 +40,9 @@ nArgs :: Args -> Int
 nArgs Args { fileArgs = fs, switchArgs = ss } = length fs + length ss
 
 data Arg = VCF String | JSON String
-         | Positional String | NoPhoto Bool deriving (Show)
+         | Positional String | NoPhoto Bool | NoProdID Bool | NoABUID Bool
+         | NoN Bool
+           deriving (Show)
 
 -- Get the underlying string out of an argument
 argString :: Arg -> String
@@ -45,6 +50,9 @@ argString (VCF s) = s
 argString (JSON s) = s
 argString (Positional s) = s
 argString (NoPhoto _) = "No Photo"
+argString (NoProdID _) = "No ProdID"
+argString (NoABUID _) = "No ABUID"
+argString (NoN _) = "No N"
 -- Determine if the argument is for a VCF file
 isVCF :: Arg -> Bool
 isVCF (VCF _s) = True
@@ -85,10 +93,22 @@ jsonExplicit =
 noPhoto :: Parser Arg
 noPhoto = NoPhoto <$> flag' False (long "NoPhoto")
 
+-- Parameter to eliminate the PRODID field from the output contacts
+noProdID :: Parser Arg
+noProdID = NoProdID <$> flag' False (long "NoProdID")
+
+-- Parameter to eliminate the X-ABUID field from the output contacts
+noABUID :: Parser Arg
+noABUID = NoABUID <$> flag' False (long "NoABUID")
+
+-- Parameter to eliminate the N field from the output contacts
+noN :: Parser Arg
+noN = NoN <$> flag' False (long "NoN")
+
 -- Any of the paremeter options
 anyArg :: Parser Arg
-anyArg = vcfExplicit <|> jsonExplicit <|> positional <|> noPhoto
--- anyArg = noPhoto
+anyArg = vcfExplicit <|> jsonExplicit <|> positional <|>
+         noPhoto <|> noProdID <|> noABUID <|> noN
 
 -- Return a list of parsed parameters
 parseArgList :: Parser [Arg]

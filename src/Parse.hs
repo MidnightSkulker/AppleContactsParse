@@ -326,7 +326,6 @@ mkFieldFilters :: [String] -> [Field -> Bool]
 mkFieldFilters fns = map mkFieldFilter fns
 applyFieldFilters :: [Field -> Bool] -> [Field] -> [Field]
 applyFieldFilters fltrs fs = foldl (flip filter) fs fltrs
--- applyFieldFilters fltrs fs = foldl (\fz fltr -> filter fltr fz) fs fltrs
 mkAndApplyFieldFilters :: FieldNames -> [Field] -> [Field]
 mkAndApplyFieldFilters fnames fs = applyFieldFilters (mkFieldFilters fnames) fs
 
