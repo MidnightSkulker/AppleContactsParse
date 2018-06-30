@@ -9,8 +9,7 @@ import Test (test)
 import Args (Files(..), commandArgAnalysis, commandLineOptions, Command(..))
 
 main :: IO ()
-main = do { putStrLn ("Ready to parse command line options")
-          ; parsedOptions <- execParser commandLineOptions
+main = do { parsedOptions <- execParser commandLineOptions
           ; analyzedOptions <- commandArgAnalysis parsedOptions
           ; case analyzedOptions of
               Left argError -> putStrLn (show argError)

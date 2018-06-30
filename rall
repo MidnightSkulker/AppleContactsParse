@@ -1,6 +1,3 @@
 #!/bin/bash
 set -v
-# ./.stack-work/dist/x86_64-osx/Cabal-2.0.1.0/build/AppleContactsParse/AppleContactsParse
 AppleContactsParse --vcf=ARCHIVE/all.vcf --json=ARCHIVE/all.json --NoPhoto --NoProdID --NoABUID --NoN --NoAdr
-ls -l ARCHIVE/all.*
-
