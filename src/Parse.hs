@@ -19,7 +19,6 @@ module Parse (
   , Card (..) ) where
 
 import Text.ParserCombinators.Parsec
--- import Text.RE.TDFA.String
 import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
@@ -28,6 +27,8 @@ import Data.List (partition, groupBy, find, intercalate, sortOn)
 import Data.Maybe (isJust, fromJust)
 import RE (isItem, itemNumber)
 import Args (FieldNames)
+import Out (niceList)
+import Debug.Trace
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -304,7 +305,7 @@ mkFieldItem f1 f2 =
   in if (after1 == "X-ABLabel")
      then let attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes f2))
               labelStr = maybe "NoName" name (find isSimpleAttribute (attributes f1))
-              labelMem = mkFieldItemMember match1 after1 num1 labelStr
+              labelMem = mkFieldItemMember match1 "" num1 labelStr
               valueMem = mkFieldItemMember match2 after2 num2 attrValue
           in FieldItem { labelMember = labelMem, valueMember = valueMem }
      else let attrValue = maybe "NoValue" name (find isSimpleAttribute (attributes f1))
@@ -344,10 +345,10 @@ combineItems fldNames fs =
       itemGroups = groupBy sameItemNumber (sortOn pangalan items)
       -- Compute the information needed from ieach itemGroup
       fieldItems :: [FieldItem]
-      fieldItems = map mkFieldItemFromList itemGroups
+      fieldItems = map mkFieldItemFromList (trace ("itempGroups:\n" ++ niceList itemGroups ++ "\n---------\n") itemGroups)
       -- Turn the field items into single fields
       combinedFields :: [Field]
-      combinedFields = map mkItemField fieldItems
+      combinedFields = map mkItemField (trace ("fieldItems:\n" ++ niceList fieldItems ++ "\n----------\n") fieldItems)
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
@@ -358,7 +359,7 @@ combineItems fldNames fs =
       singleFields = map mkSingleFieldItem fieldItemGroups
       -- Combine each group into an aggregate field item
       combinedItems = map mkGroupFieldItem fieldItemGroups
-  in combinedFields ++ nonItems ++ combinedItems ++ singleFields
+  in (trace ("combinedFields:\n" ++ niceList combinedFields ++ "\n---------\n") combinedFields) ++ nonItems ++ (trace ("combinedItems:\n" ++ niceList combinedItems ++ "\n---------\n") combinedItems) ++ singleFields
 
 -- Make an item field from an item FieldItem record
 mkItemField :: FieldItem -> Field
@@ -366,7 +367,9 @@ mkItemField FieldItem { labelMember = lMem, valueMember = vMem } =
   let labelValue = itemValue lMem
       labelStr = afterText lMem
       attrValue = itemValue vMem
-  in Field { pangalan = labelStr ++ "-" ++ labelValue
+  in Field { pangalan = if labelStr == ""
+                        then labelValue
+                        else labelStr ++ "-" ++ labelValue
            , attributes = [mkSimpleAttribute attrValue] }
 mkItemField BrokenFieldItem { debugData = d } =
   Field { pangalan = "Broken Field", attributes = [SimpleAttribute { name = d }] }
@@ -394,7 +397,8 @@ instance ToJSON Field where
   toJSON f = let (s, v) = fieldToPair f in object [T.pack s .= v]
 --  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
 
--- Safely get the last attribute of the field (return Nothing when there are no attributes)
+-- Safely get the last attribute of the field
+-- (return Nothing when there are no attributes)
 lastAttribute :: Field -> Attribute
 lastAttribute f = if null (attributes f) then NoAttribute else last (attributes f)
 

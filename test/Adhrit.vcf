@@ -1,0 +1,27 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//Mac OS X 10.13.6//EN
+N:Harole;Adhrit;;;
+FN:Adhrit Harole
+ORG:Kasalukuyang Estudyante;
+item1.EMAIL;type=INTERNET;type=pref:pravinharole@gmail.con
+item1.X-ABLabel:Dad
+item2.EMAIL;type=INTERNET:manishacpatil@gmail.com
+item2.X-ABLabel:Mom
+item3.TEL;type=pref:(971) 325-9355
+item3.X-ABLabel:Dad
+item4.TEL:5033328838
+item4.X-ABLabel:Mom
+ADR;type=HOME;type=pref:;;970 SW 173rd Ave #723;Beaverton;OR;97007;USA
+item5.X-AIM;type=pref:Yes
+item5.X-ABLabel:Immunization
+item6.X-AIM:7/11/14
+item6.X-ABLabel:Birthday
+item7.IMPP;X-SERVICE-TYPE=AIM;type=pref:aim:Yes
+item7.X-ABLabel:Immunization
+item8.IMPP;X-SERVICE-TYPE=AIM:aim:7/11/14
+item8.X-ABLabel:Birthday
+CATEGORIES:Address Book
+UID:5e60085c149e4298
+X-ABUID:AD8FB367-1167-428C-B770-992689B7B086:ABPerson
+END:VCARD
