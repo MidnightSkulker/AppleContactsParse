@@ -24,11 +24,10 @@ import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
 import Data.List (partition, groupBy, find, intercalate, sortOn)
-import Data.Maybe (isJust, fromJust)
-import RE (isItem, itemNumber)
+import Data.Maybe (isJust, fromJust, isNothing)
+import RE (isItem, itemNumber, isIMPP)
 import Args (FieldNames)
-import Out (niceList)
-import Debug.Trace
+-- import Debog (niceListTrace)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -319,6 +318,9 @@ mkFieldItemFromList :: [Field] -> FieldItem
 mkFieldItemFromList [f1, f2] = mkFieldItem f1 f2
 mkFieldItemFromList fs = BrokenFieldItem { debugData = show fs }
 
+-- Special field filters
+isNotIMPPItemGroup :: [Field] -> Bool
+isNotIMPPItemGroup = isNothing . find (isIMPP . pangalan)
 -- Produce a Field filter from the Flags. This will filter out that field
 -- Currently only does one filter
 mkFieldFilter :: String -> (Field -> Bool)
@@ -327,8 +329,11 @@ mkFieldFilters :: [String] -> [Field -> Bool]
 mkFieldFilters fns = map mkFieldFilter fns
 applyFieldFilters :: [Field -> Bool] -> [Field] -> [Field]
 applyFieldFilters fltrs fs = foldl (flip filter) fs fltrs
+-- Build List of Field Filters (from all sources)
+buildFilterList :: FieldNames -> [Field -> Bool]
+buildFilterList fnames = mkFieldFilters fnames
 mkAndApplyFieldFilters :: FieldNames -> [Field] -> [Field]
-mkAndApplyFieldFilters fnames fs = applyFieldFilters (mkFieldFilters fnames) fs
+mkAndApplyFieldFilters fnames fs = applyFieldFilters (buildFilterList fnames) fs
 
 -- The following function will find both of these fields and combine
 -- them into one field. Similar remarks apply to the telephone fields.
@@ -343,12 +348,15 @@ combineItems fldNames fs =
       -- Note that the two members of the item group may come in either order.
       itemGroups :: [[Field]]
       itemGroups = groupBy sameItemNumber (sortOn pangalan items)
+      -- Filter out the item groups that have a name with "IMPP" in it.
+      itemGroupsFiltered :: [[Field]]
+      itemGroupsFiltered = filter isNotIMPPItemGroup itemGroups
       -- Compute the information needed from ieach itemGroup
       fieldItems :: [FieldItem]
-      fieldItems = map mkFieldItemFromList (trace ("itempGroups:\n" ++ niceList itemGroups ++ "\n---------\n") itemGroups)
+      fieldItems = map mkFieldItemFromList itemGroupsFiltered
       -- Turn the field items into single fields
       combinedFields :: [Field]
-      combinedFields = map mkItemField (trace ("fieldItems:\n" ++ niceList fieldItems ++ "\n----------\n") fieldItems)
+      combinedFields = map mkItemField fieldItems
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
@@ -359,7 +367,7 @@ combineItems fldNames fs =
       singleFields = map mkSingleFieldItem fieldItemGroups
       -- Combine each group into an aggregate field item
       combinedItems = map mkGroupFieldItem fieldItemGroups
-  in (trace ("combinedFields:\n" ++ niceList combinedFields ++ "\n---------\n") combinedFields) ++ nonItems ++ (trace ("combinedItems:\n" ++ niceList combinedItems ++ "\n---------\n") combinedItems) ++ singleFields
+  in combinedFields ++ nonItems ++ combinedItems ++ singleFields
 
 -- Make an item field from an item FieldItem record
 mkItemField :: FieldItem -> Field
