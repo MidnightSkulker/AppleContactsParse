@@ -41,3 +41,6 @@ outputs/Email1WithDups Email1WithDups: outputs/KasalukuyangWithDups.json
 outputs/Email1 Email1: Email1WithDups
 	cat outputs/$< | sort -u | grep -v null >outputs/Email1
 
+# Count lines of code
+cloc:
+	cloc --exclude-dir=outputs,.git,tutorial-env,ARCHIVE .
