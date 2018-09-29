@@ -12,8 +12,11 @@ outputs/all.json: outputs/all.vcf
 
 # Get only the student records from the JSON file of the Mac Address Book.
 # There may be duplicates in this file.
-outputs/KasalukuyangWithDups.json KasalukyangWithDups Kasalukyuang: outputs/all.json
-	cat ~/Google\ Drive/Learn/Haskell/AppleContactsParse/ARCHIVE/all.json | jq '.[].fields | select((.ORG != null) and (.ORG[0] | contains("Kasalukuyang")))' >outputs/KasalukuyangWithDups.json
+outputs/KasalukuyangWithDups.json KasalukyangWithDups KasalukyuangWithDups: outputs/all.json
+	cat $< | jq '.[].fields | select((.ORG != null) and (.ORG[0] | contains("Kasalukuyang")))' >outputs/KasalukuyangWithDups.json
+
+outputs/Kasalukuyang.json Kasalukuyang: outputs/KasalukuyangWithDups.json
+	cat $< | jq -c '. | {Name: .FN, Email: .EMAIL1, TEL: .TEL1, Immunization: .Immunization, Birthday: .Birthday, EMAILS: .EMAILS, TEL: .TELS}' | sort -u >outputs/Kasalukuyang.json
 
 # Generate the list of students with no immunization record.
 # This list may have duplicate entries.
