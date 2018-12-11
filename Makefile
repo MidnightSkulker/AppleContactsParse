@@ -1,3 +1,7 @@
+# Clean up the outputs
+clean:
+	rm outputs/*
+
 # Generate a very messy text file with student records from the Mac Address Book
 outputs/all.vcf: ~/Library/Application\ Support/AddressBook/ABAssistantChangelog.aclcddb-shm
 	osascript backupAddressBook.scpt
@@ -18,15 +22,20 @@ outputs/KasalukuyangWithDups.json KasalukyangWithDups KasalukyuangWithDups: outp
 outputs/Kasalukuyang.json Kasalukuyang: outputs/KasalukuyangWithDups.json
 	cat $< | jq -c '. | {Name: .FN, Email: .EMAIL1, TEL: .TEL1, Immunization: .Immunization, Birthday: .Birthday, EMAILS: .EMAILS, TEL: .TELS}' | sort -u >outputs/Kasalukuyang.json
 
+# Generate Current Email List
+outputs/Emails.json Emails: outputs/Kasalukuyang.json
+	cat $< | jq -c '. | {Email: .Email}' >outputs/Emails.json
+
 # Generate the list of students with no immunization record.
 # This list may have duplicate entries.
-outputs/NoImmunization.json NoImmunization.json: outputs/KasalukuyangWithDups.json
+outputs/NoImmunization.json NoImmunization.json NoImmunization: outputs/KasalukuyangWithDups.json
 	cat $< | jq '. | select((.Immunization != null) and (.Immunization == "No"))' >outputs/NoImmunization.json
 
 # Build a list of students with no immunization records.
 # This list should have no duplicates.
 outputs/NoImmunizationEmail.json NoImmunizationEmail: outputs/NoImmunization.json
 	cat $< | jq -c '. | {Immunization: .Immunization, Name: .FN, Email: .EMAIL1}' | sort -u >outputs/NoImmunizationEmail.json
+	cat outputs/NoImmunizationEmail.json | jq -c '. | {Immunization: .Immunization, Name: .Name, Email: .Email}'
 
 # Build a list of email addresses for students with no immunization record.
 # This list should have no duplicates
@@ -36,7 +45,7 @@ outputs/NoImmunizationEmail: outputs/NoImmunizationEmail.json
 # Build the list of student e-mails, where one email (of possibly more that one)
 # is chosen for the student. This list may have duplicate entries for a student.
 outputs/Email1WithDups Email1WithDups: outputs/KasalukuyangWithDups.json
-	cat $< | jq '.EMAIL1' >outputs/Email1WithDups
+	cat $< | jq -r '.EMAIL1' >outputs/Email1WithDups
 
 # Build the list of student e-mails, where one email (of possibly more that one)
 # is chosen for the student. This list should have no duplicate entries for
