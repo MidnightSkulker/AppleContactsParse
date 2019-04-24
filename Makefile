@@ -26,6 +26,14 @@ outputs/Kasalukuyang.json Kasalukuyang: outputs/KasalukuyangWithDups.json
 outputs/Emails.json Emails: outputs/Kasalukuyang.json
 	cat $< | jq -c '. | {Email: .Email}' >outputs/Emails.json
 
+# Generate list of graduates for 2019.
+outputs/Graduates.json Graduates: outputs/Kasalukuyang.json
+	cat $< | jq -c '. | select(.Birthday >= 09/01/2014)' >outputs/Graduates.json
+
+# Generate Current Birthdays
+outputs/Birthdays.json Birthdays: outputs/Kasalukuyang.json
+	cat $< | jq -c '. | {Name: .Name, Birthday: .Birthday}' >outputs/Birthdays.json
+
 # Generate the list of students with no immunization record.
 # This list may have duplicate entries.
 outputs/NoImmunization.json NoImmunization.json NoImmunization: outputs/KasalukuyangWithDups.json

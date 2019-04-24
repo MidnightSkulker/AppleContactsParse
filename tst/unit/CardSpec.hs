@@ -51,6 +51,10 @@ spec = do
     it "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" $
       jsonTest (card []) "BEGIN:VCARD\nORG:Macys;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
 
+    it "BEGIN:VCARD\nORG:Luningning;\nitem4.X-AIM;type=pref:06/09/2014\nitem4.X-ABLabel:Birthday\nEND:VCARD\n" $
+      jsonTest (card []) "BEGIN:VCARD\nORG:Luningning;\nEND:VCARD\n" `shouldBe` "{\"fields\":{\"ORG\":[\"Macys\",\"\"]}}"
+
+
     it "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09\n  (Wednesday)\nNOTE:Has Immunization Record\nEND:VCARD" $
       jsonTest (vcf []) "BEGIN:VCARD\nORG:Macys;\nBDAY:2014-06-09-\n Wednesday\nNOTE:Has Immunization Record\nEND:VCARD" `shouldBe` "[{\"fields\":{\"ORG\":[\"Macys\",\"\"],\"NOTE\":\"Has Immunization Record\",\"BDAY\":\"2014-06-09-Wednesday\"}}]"
 

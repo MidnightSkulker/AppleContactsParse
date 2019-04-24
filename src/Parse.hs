@@ -27,7 +27,9 @@ import Data.List (partition, groupBy, find, intercalate, sortOn)
 import Data.Maybe (isJust, fromJust, isNothing)
 import RE (isItem, itemNumber, isIMPP)
 import Args (FieldNames)
--- import Debog (niceListTrace)
+import Date (comparableDate)
+import Debog (niceListTrace)
+import Debug.Trace (trace)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -204,7 +206,8 @@ urlField = do { optional itemPrefix
         itemPrefix = string "item" >> number >> char '.' >> return ()
 
 -- A field has a name, and a list of attributes.
-data Field = Field { pangalan :: String, attributes :: [Attribute] } deriving (Show, Generic)
+data Field = Field { pangalan :: String
+                   , attributes :: [Attribute] } deriving (Show, Generic)
 
 {-
 The VCF file has an unfortunate encoding for custom names for fields. Here is
@@ -283,7 +286,7 @@ mkSingleFieldItem fs =
       fieldItemType = getFieldItemType first
       attr = getFieldTypeAttrValue first
   in Field { pangalan = fieldItemType ++ "1"
-           , attributes = [mkSimpleAttribute attr]}
+           , attributes = [mkSimpleAttribute attr] }
 
 -- All of the data for a Field Item, i.e. a FieldItemMember for both items:
 -- item2.TEL;type=pref:8472081772
@@ -350,13 +353,21 @@ combineItems fldNames fs =
       itemGroups = groupBy sameItemNumber (sortOn pangalan items)
       -- Filter out the item groups that have a name with "IMPP" in it.
       itemGroupsFiltered :: [[Field]]
-      itemGroupsFiltered = filter isNotIMPPItemGroup itemGroups
-      -- Compute the information needed from ieach itemGroup
+      itemGroupsFiltered = filter isNotIMPPItemGroup (niceListTrace "itemGroups" itemGroups)
+      -- Compute the information needed from each itemGroup
       fieldItems :: [FieldItem]
-      fieldItems = map mkFieldItemFromList itemGroupsFiltered
+      fieldItems = map mkFieldItemFromList
+                       (niceListTrace "itemGroupsFiltered" itemGroupsFiltered)
+                       
+      -- Convert the birthday items from "03/23/2016" format into
+      -- "2016-03-26" format, so that dates can be compared by
+      -- unix commands such as jq
+      birthdayItems :: [FieldItem]
+      birthdayItems = map comparableBirthday (niceListTrace "fieldItems" fieldItems)
+      
       -- Turn the field items into single fields
       combinedFields :: [Field]
-      combinedFields = map mkItemField fieldItems
+      combinedFields = map mkItemField (niceListTrace "birthdayItems" birthdayItems)
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
@@ -400,6 +411,19 @@ fieldToPair Field { pangalan = p, attributes = as } =
     [] -> (p, Null)
     [a] -> (p, oneField a)
     az -> (p, toJSON az)
+
+-- Convert the birthday items from "03/23/2016" format into
+-- "2016-03-26" format, so that dates can be compared as strings
+-- for unix commands like jq
+comparableBirthday :: FieldItem -> FieldItem
+comparableBirthday b@(BrokenFieldItem { debugData = _d }) = b
+comparableBirthday f =
+  let isBirthday :: FieldItem -> Bool
+      isBirthday = (== "Birthday") . itemValue . labelMember
+      dateValue = valueMember f
+  in if isBirthday (trace "comparableBirthday f = " f)
+     then f { valueMember = dateValue { itemValue = comparableDate (itemValue dateValue) } }
+     else f
 
 instance ToJSON Field where
   toJSON f = let (s, v) = fieldToPair f in object [T.pack s .= v]

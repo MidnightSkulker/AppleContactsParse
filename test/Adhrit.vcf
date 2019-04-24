@@ -15,7 +15,7 @@ item4.X-ABLabel:Mom
 ADR;type=HOME;type=pref:;;970 SW 173rd Ave #723;Beaverton;OR;97007;USA
 item5.X-AIM;type=pref:Yes
 item5.X-ABLabel:Immunization
-item6.X-AIM:7/11/14
+item6.X-AIM:07/11/2014
 item6.X-ABLabel:Birthday
 item7.IMPP;X-SERVICE-TYPE=AIM;type=pref:aim:Yes
 item7.X-ABLabel:Immunization
