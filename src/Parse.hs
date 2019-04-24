@@ -28,8 +28,8 @@ import Data.Maybe (isJust, fromJust, isNothing)
 import RE (isItem, itemNumber, isIMPP)
 import Args (FieldNames)
 import Date (comparableDate)
-import Debog (niceListTrace)
-import Debug.Trace (trace)
+-- import Debog (niceListTrace)
+-- import Debug.Trace (trace)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -353,21 +353,20 @@ combineItems fldNames fs =
       itemGroups = groupBy sameItemNumber (sortOn pangalan items)
       -- Filter out the item groups that have a name with "IMPP" in it.
       itemGroupsFiltered :: [[Field]]
-      itemGroupsFiltered = filter isNotIMPPItemGroup (niceListTrace "itemGroups" itemGroups)
+      itemGroupsFiltered = filter isNotIMPPItemGroup itemGroups
       -- Compute the information needed from each itemGroup
       fieldItems :: [FieldItem]
-      fieldItems = map mkFieldItemFromList
-                       (niceListTrace "itemGroupsFiltered" itemGroupsFiltered)
+      fieldItems = map mkFieldItemFromList itemGroupsFiltered
                        
       -- Convert the birthday items from "03/23/2016" format into
       -- "2016-03-26" format, so that dates can be compared by
       -- unix commands such as jq
       birthdayItems :: [FieldItem]
-      birthdayItems = map comparableBirthday (niceListTrace "fieldItems" fieldItems)
+      birthdayItems = map comparableBirthday fieldItems
       
       -- Turn the field items into single fields
       combinedFields :: [Field]
-      combinedFields = map mkItemField (niceListTrace "birthdayItems" birthdayItems)
+      combinedFields = map mkItemField birthdayItems
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
@@ -421,7 +420,7 @@ comparableBirthday f =
   let isBirthday :: FieldItem -> Bool
       isBirthday = (== "Birthday") . itemValue . labelMember
       dateValue = valueMember f
-  in if isBirthday (trace "comparableBirthday f = " f)
+  in if isBirthday f
      then f { valueMember = dateValue { itemValue = comparableDate (itemValue dateValue) } }
      else f
 
