@@ -28,7 +28,7 @@ outputs/Emails.json Emails: outputs/Kasalukuyang.json
 
 # Generate list of graduates for 2019.
 outputs/Graduates.json Graduates: outputs/Kasalukuyang.json
-	cat $< | jq -c '. | select(.Birthday >= 09/01/2014)' >outputs/Graduates.json
+	cat $< | jq -c '. | select((.Birthday <= "2014-09-01") and (.Birthday >= "2013-09-01") ) | {Name: .Name, Birthday: .Birthday}' | jq -s 'unique_by(.Name)' >outputs/Graduates.json
 
 # Generate Current Birthdays
 outputs/Birthdays.json Birthdays: outputs/Kasalukuyang.json

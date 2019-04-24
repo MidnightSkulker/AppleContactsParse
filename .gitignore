@@ -4,6 +4,4 @@ outputs
 .#*
 .stack-work
 tutorial-env
-immunization.out
-immunization.emails
 test.out
