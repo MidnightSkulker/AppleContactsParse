@@ -23,8 +23,8 @@ import GHC.Generics (Generic)
 import Data.Aeson as Aeson (ToJSON(..), object, (.=), Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Char (isAlphaNum, isNumber)
-import Data.List (partition, groupBy, find, intercalate, sortOn)
-import Data.Maybe (isJust, fromJust, isNothing)
+import Data.List (partition, groupBy, find, intercalate, sortOn, nubBy)
+import Data.Maybe (isJust, fromJust, isNothing, maybe)
 import RE (isItem, itemNumber, isIMPP)
 import Args (FieldNames)
 import Date (comparableDate)
@@ -351,9 +351,11 @@ combineItems fldNames fs =
       -- Note that the two members of the item group may come in either order.
       itemGroups :: [[Field]]
       itemGroups = groupBy sameItemNumber (sortOn pangalan items)
+      
       -- Filter out the item groups that have a name with "IMPP" in it.
       itemGroupsFiltered :: [[Field]]
       itemGroupsFiltered = filter isNotIMPPItemGroup itemGroups
+      
       -- Compute the information needed from each itemGroup
       fieldItems :: [FieldItem]
       fieldItems = map mkFieldItemFromList itemGroupsFiltered
@@ -367,11 +369,13 @@ combineItems fldNames fs =
       -- Turn the field items into single fields
       combinedFields :: [Field]
       combinedFields = map mkItemField birthdayItems
+      
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
       fieldItemGroups :: [[FieldItem]]
       fieldItemGroups = groupBy sameFieldItemType (sortOn getFieldItemType fieldItems)
+      
       -- Choose one from each group to make representative Field.
       singleFields :: [Field]
       singleFields = map mkSingleFieldItem fieldItemGroups
@@ -508,7 +512,8 @@ openCard = string "BEGIN:VCARD" >> eol >> return ()
 closeCard = string "END:VCARD" >> return ()
 
 -- An card consists of one or more fields.
-data Card = Card { fieldz :: [Field] } deriving (Show, Generic)
+data Card = Card { fullName :: Maybe String,
+                   fieldz :: [Field] } deriving (Show, Generic)
 
 -- Fullname Order: Last, First, Middle, Prefix, Suffix
 
@@ -516,11 +521,35 @@ instance ToJSON Card where
   toJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
 --            (p, mkObjectFromPairable attributeToPair as)
 
--- Parse an card.
+-- Get the full name from an "FN" field, of this form:
+-- Field {pangalan = "FN", attributes = [SimpleAttribute {name = "Adhrit Harole"}]}
+getFullName :: Field -> Maybe String
+getFullName f | pangalan f == "FN" =
+  let attrs = attributes f
+  in case attrs of
+       [SimpleAttribute {name = fn}] -> Just fn
+       _ -> Nothing
+getFullName _ = Nothing
+
+-- Find the full name from the list of fields
+findFullName :: [Field] -> Maybe String
+findFullName fs =
+  let isFullName :: Field -> Bool
+      isFullName f = isJust (getFullName f)
+      mfnfield = find isFullName fs
+  in maybe Nothing getFullName mfnfield
+      
+-- Test if two cards have the same full name (FN)
+sameFN :: Card -> Card -> Bool
+sameFN c1 c2 | fullName c1 == Nothing || fullName c2 == Nothing = False
+sameFN c1 c2 = fromJust (fullName c1) == fromJust (fullName c2)
+
+-- Parse a card.
 card :: FieldNames -> GenParser Char st Card
 card fns = do { openCard
               ; fs <- field fns `manyTill` (try closeCard)
-              ; return Card { fieldz = combineItems fns fs }
+              ; return Card { fullName = findFullName fs,
+                              fieldz = combineItems fns fs }
               }
 
 -- A VCF file is a list of cards.
@@ -540,5 +569,5 @@ vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
      ; eof
-     ; return VCF { cards = es }
+     ; return VCF { cards = nubBy sameFN es }
      }
