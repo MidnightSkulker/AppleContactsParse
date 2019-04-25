@@ -564,7 +564,11 @@ instance ToJSON VCF where
 -- END:VCARD\n
 -- or just
 -- END:VCARD
-
+--
+-- No matter what I do the apple contacts is generating duplicate
+-- entries for many students (and other contacts). I think it has
+-- something to do with sharing the contacts with two phones, as
+-- well as icloud. So I use "nubBy" to remove the duplicate entries.
 vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
