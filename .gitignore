@@ -1,5 +1,6 @@
 ARCHIVE
 outputs
+inputs/NotPaid
 \#*
 .#*
 .stack-work
