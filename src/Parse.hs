@@ -569,6 +569,7 @@ instance ToJSON VCF where
 -- entries for many students (and other contacts). I think it has
 -- something to do with sharing the contacts with two phones, as
 -- well as icloud. So I use "nubBy" to remove the duplicate entries.
+--
 vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
