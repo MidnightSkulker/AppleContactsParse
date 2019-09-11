@@ -125,6 +125,17 @@ attributeToPair ComplexAttribute { name = n, value = v } = ( n, String (T.pack v
 attributeToPair SimpleAttribute { name = n } = ( n, Null )
 attributeToPair NoAttribute = ( "NoValue", Null )
 
+-- Determine if an attribute has the specified information (name and possibly a value)
+attrHasValue :: String -> Maybe String -> Attribute -> Bool
+attrHasValue nom mval attr =
+  case attr of
+    SimpleAttribute { name = n } -> nom == n
+    ComplexAttribute { name = n, value = v } ->
+      case mval of
+        Nothing -> nom == n
+        Just val -> nom == n && val == v
+    NoAttribute -> False
+
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
 oneField ComplexAttribute { name = n, value = v } =
@@ -142,7 +153,7 @@ mkObjectFromPairable toPair = object . map (mulaPair . toPair)
   where mulaPair :: KeyValue kv => (String, Value) -> kv
         mulaPair (s, t) = (T.pack s .= t)
 
--- How to encode / decode an Attribute
+-- How to encode / decode an Attribute to JSON
 instance ToJSON Attribute where
   toJSON ComplexAttribute { name = n, value = v } =
     if v == []
@@ -261,13 +272,16 @@ mkFieldItemMember m a inum ival =
 getFieldItemType :: FieldItem -> String
 getFieldItemType FieldItem { labelMember = l } = afterText l
 getFieldItemType BrokenFieldItem { debugData = d } = d
+
 -- Determine if two field items have the same type
 sameFieldItemType :: FieldItem -> FieldItem -> Bool
 sameFieldItemType f1 f2 = getFieldItemType f1 == getFieldItemType f2
+
 -- Get the value of the attribute
 getFieldTypeAttrValue :: FieldItem -> String
 getFieldTypeAttrValue FieldItem { valueMember = v } = itemValue v
 getFieldTypeAttrValue BrokenFieldItem { debugData = d } = d
+
 -- Build a combined Field from a group of field of the same type (e.g. TEL)
 mkGroupFieldItem :: [FieldItem] -> Field
 mkGroupFieldItem [] = error "mkGroupFieldItem []"
@@ -277,6 +291,7 @@ mkGroupFieldItem fs =
       smushedAttrs = intercalate "," attrs
   in Field { pangalan = fieldItemType ++ "S"
            , attributes = [mkSimpleAttribute smushedAttrs] }
+
 -- Build a single Field from a group of field of the same type (e.g. TEL)
 -- by choosing one of the group (the first one)
 mkSingleFieldItem :: [FieldItem] -> Field
@@ -324,6 +339,7 @@ mkFieldItemFromList fs = BrokenFieldItem { debugData = show fs }
 -- Special field filters
 isNotIMPPItemGroup :: [Field] -> Bool
 isNotIMPPItemGroup = isNothing . find (isIMPP . pangalan)
+
 -- Produce a Field filter from the Flags. This will filter out that field
 -- Currently only does one filter
 mkFieldFilter :: String -> (Field -> Bool)
@@ -332,6 +348,7 @@ mkFieldFilters :: [String] -> [Field -> Bool]
 mkFieldFilters fns = map mkFieldFilter fns
 applyFieldFilters :: [Field -> Bool] -> [Field] -> [Field]
 applyFieldFilters fltrs fs = foldl (flip filter) fs fltrs
+
 -- Build List of Field Filters (from all sources)
 buildFilterList :: FieldNames -> [Field -> Bool]
 buildFilterList fnames = mkFieldFilters fnames
@@ -400,9 +417,11 @@ mkItemField BrokenFieldItem { debugData = d } =
 -- you will get an exception
 fieldItemStructure :: Field -> (String, String, String)
 fieldItemStructure = fromJust . isItem . pangalan
+
 -- Determine if a field is an "item", i.e. the name starts with item[0-9]+
 isFieldItem :: Field -> Bool
 isFieldItem = isJust . isItem . pangalan
+
 -- Determine if two fields have the same item number
 sameItemNumber :: Field -> Field -> Bool
 sameItemNumber f1 f2 = itemNumber (pangalan f1) == itemNumber (pangalan f2)
@@ -428,6 +447,7 @@ comparableBirthday f =
      then f { valueMember = dateValue { itemValue = comparableDate (itemValue dateValue) } }
      else f
 
+-- Encode a Field as JSON
 instance ToJSON Field where
   toJSON f = let (s, v) = fieldToPair f in object [T.pack s .= v]
 --  toJSON f@Field { pangalan = p, attributes = as} = object [T.pack p .= mkObjectFromPairable  attributeToPair as]
@@ -466,6 +486,10 @@ noAttributes = null . attributes
 -- Safely add a simple attribute to a field.
 addSimpleAttribute :: Field -> String -> Field
 addSimpleAttribute f s = f { attributes = attributes f ++ [mkSimpleAttribute s] }
+
+-- Determine if a field has an attribute with the specified values
+fieldHasAttr :: String -> Maybe String -> Field -> Bool
+fieldHasAttr nom mval f = isJust (find (attrHasValue nom mval) (attributes f))
 
 -- Parse a simple Field. A field is <usually> on one line.
 simpleField :: GenParser Char st Field
@@ -515,12 +539,11 @@ closeCard = string "END:VCARD" >> return ()
 data Card = Card { fullName :: Maybe String,
                    fieldz :: [Field] } deriving (Show, Generic)
 
--- Fullname Order: Last, First, Middle, Prefix, Suffix
-
 instance ToJSON Card where
   toJSON Card { fieldz = fs } = object [ "fields" .= mkObjectFromPairable fieldToPair fs ]
 --            (p, mkObjectFromPairable attributeToPair as)
 
+-- Fullname Order: Last, First, Middle, Prefix, Suffix
 -- Get the full name from an "FN" field, of this form:
 -- Field {pangalan = "FN", attributes = [SimpleAttribute {name = "Adhrit Harole"}]}
 getFullName :: Field -> Maybe String
@@ -538,7 +561,16 @@ findFullName fs =
       isFullName f = isJust (getFullName f)
       mfnfield = find isFullName fs
   in maybe Nothing getFullName mfnfield
-      
+
+-- Determine if the card has a field with the attribute indicated.
+cardHasAttr :: String -> Maybe String -> Card -> Bool
+cardHasAttr nom mval c = isJust (find (fieldHasAttr nom mval) (fieldz c))
+
+-- Determine if the card is for a current student.
+-- This is indicated by an ORG field with the value "Kasalukuyang Estudyante"
+isCurrentStudent :: Card -> Bool
+isCurrentStudent = cardHasAttr "ORG" (Just "Kasalukuyang Estudyante")
+
 -- Test if two cards have the same full name (FN)
 sameFN :: Card -> Card -> Bool
 sameFN c1 c2 | fullName c1 == Nothing || fullName c2 == Nothing = False
@@ -555,6 +587,7 @@ card fns = do { openCard
 -- A VCF file is a list of cards.
 data VCF = VCF { cards :: [Card] } deriving (Show, Generic)
 
+-- Encode a VCF file into JSON
 instance ToJSON VCF where
   toJSON = toJSON . cards
 
@@ -574,5 +607,5 @@ vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
      ; eof
-     ; return VCF { cards = nubBy sameFN es }
+     ; return VCF { cards = filter isCurrentStudent (nubBy sameFN es) }
      }
