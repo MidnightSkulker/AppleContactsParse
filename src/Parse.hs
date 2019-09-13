@@ -30,10 +30,10 @@ import Data.List (partition, groupBy, find, intercalate, sortOn, nubBy)
 import Data.Maybe (isJust, fromJust, isNothing, maybe)
 -- import Control.Monad.IO.Class (liftIO)
 import RE (isItem, itemNumber, isIMPP)
-import Args (FieldNames)
+import Args (FieldNames, getStudentsOnly)
 import Date (comparableDate)
 -- import Debog (niceListTrace)
-import Debug.Trace (trace)
+-- import Debug.Trace (trace)
 
 {- A VCF file contains a list of cards, each card has the following:
  Opener: BEGIN:VCARD
@@ -610,6 +610,9 @@ instance ToJSON VCF where
 vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
-     ; trace "Hello from vcf" eof
-     ; return VCF { cards = filter isCurrentStudent (nubBy sameFN es) }
+     ; let cardz =
+             if getStudentsOnly fns
+             then filter isCurrentStudent (nubBy sameFN es)
+             else nubBy sameFN es
+     ; return VCF { cards = cardz }
      }

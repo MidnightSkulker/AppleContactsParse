@@ -5,7 +5,8 @@ module Args where
 import System.IO (Handle, IOMode(..), stdin, stdout)
 import Options.Applicative
 import Data.Semigroup ((<>))
-import Data.List (partition)
+import Data.List (partition, find)
+import Data.Maybe (isJust)
 import Files (safeOpenFile)
 
 -- Flags that can be set
@@ -15,6 +16,10 @@ type FieldNames = [String]
 -- Default is all the flags false
 defaultFlags :: Flags
 defaultFlags = Flags { noPhotos = False }
+-- Determine if we should get Students only
+getStudentsOnly :: FieldNames -> Bool
+getStudentsOnly fns = isJust (find (== "StudentsOnly") fns)
+
 -- Set the appropriate flag according to the argument
 flagSetter :: Flags -> Arg -> Flags
 flagSetter f (NoPhoto _) = f { noPhotos = True }
