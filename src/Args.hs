@@ -30,6 +30,7 @@ flagField (NoProdID _) = "PRODID"
 flagField (NoABUID _) = "X-ABUID"
 flagField (NoAdr _) = "ADR"
 flagField (NoN _) = "N"
+flagField (StudentsOnly _) = "StudentsOnly"
 flagField _ = "None***"
 flagFields :: [Arg] -> FieldNames
 flagFields = map flagField
@@ -43,7 +44,7 @@ nArgs Args { fileArgs = fs, switchArgs = ss } = length fs + length ss
 -- FIX ME: Looks like these Bool arguments are redundant.
 data Arg = VCF String | JSON String
          | Positional String | NoPhoto Bool | NoProdID Bool | NoABUID Bool
-         | NoN Bool | NoAdr Bool
+         | NoN Bool | NoAdr Bool | StudentsOnly Bool
            deriving (Show)
 
 -- Get the underlying string out of an argument
@@ -56,6 +57,8 @@ argString (NoProdID _) = "No ProdID"
 argString (NoABUID _) = "No ABUID"
 argString (NoAdr _) = "No Adr"
 argString (NoN _) = "No N"
+argString (StudentsOnly _) = ""
+
 -- Determine if the argument is for a VCF file
 isVCF :: Arg -> Bool
 isVCF (VCF _s) = True
@@ -112,10 +115,14 @@ noAdr = NoAdr <$> flag' False (long "NoAdr")
 noN :: Parser Arg
 noN = NoN <$> flag' False (long "NoN")
 
+-- Parameter to output only student records in the JSON file
+studentsOnly :: Parser Arg
+studentsOnly = StudentsOnly <$> flag' False (long "StudentsOnly")
+
 -- Any of the paremeter options
 anyArg :: Parser Arg
 anyArg = vcfExplicit <|> jsonExplicit <|> positional <|>
-         noPhoto <|> noProdID <|> noABUID <|> noN <|> noAdr
+         noPhoto <|> noProdID <|> noABUID <|> noN <|> noAdr <|> studentsOnly
 
 -- Return a list of parsed parameters
 parseArgList :: Parser [Arg]

@@ -32,7 +32,7 @@ import Data.Maybe (isJust, fromJust, isNothing, maybe)
 import RE (isItem, itemNumber, isIMPP)
 import Args (FieldNames)
 import Date (comparableDate)
-import Debog (niceListTrace)
+-- import Debog (niceListTrace)
 import Debug.Trace (trace)
 
 {- A VCF file contains a list of cards, each card has the following:
@@ -135,6 +135,7 @@ attrHasValue val attr =
   case attr of
     SimpleAttribute { name = n } -> n == val
     ComplexAttribute { value = v } -> v == val
+    NoAttribute -> False
 
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
@@ -610,7 +611,5 @@ vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
      ; trace "Hello from vcf" eof
-     ; return
-         VCF { cards = filter (cardHasAttr "ORG" (Just "Kasalukuyang Estudyante"))
-                              (nubBy sameFN es) }
+     ; return VCF { cards = filter isCurrentStudent (nubBy sameFN es) }
      }

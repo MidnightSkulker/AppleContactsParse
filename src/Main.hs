@@ -10,12 +10,15 @@ import Args (Files(..), commandArgAnalysis, commandLineOptions, Command(..))
 
 main :: IO ()
 main = do { parsedOptions <- execParser commandLineOptions
+          ; putStrLn $ "Parsed Options: " ++ show parsedOptions
           ; analyzedOptions <- commandArgAnalysis parsedOptions
+          ; putStrLn $ "Analyzed Options: " ++ show analyzedOptions
           ; case analyzedOptions of
               Left argError -> putStrLn (show argError)
               Right cmd ->
                 do { let fs = files cmd
                    ; vcfInput <- hGetContents (input fs)
+                   ; putStrLn $ "Field Names: " ++ show (fieldNames cmd)
                    ; let ejson = test (vcf (fieldNames cmd)) vcfInput
                    ; case ejson of
                        Left e -> putStrLn ("Error: " ++ show e)
