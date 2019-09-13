@@ -13,7 +13,9 @@ module Parse (
   , attribute
   , mkObjectFromPairable
   , attributeToPair
-  , attrHasValue
+  , attrHasValue -- Exported for testing only
+  , fieldHasAttr -- Exported for testing only
+  , cardHasAttr -- Exported for testing only
   , fromPair
   , Attribute (..)
   , Field (..)
@@ -128,15 +130,11 @@ attributeToPair SimpleAttribute { name = n } = ( n, Null )
 attributeToPair NoAttribute = ( "NoValue", Null )
 
 -- Determine if an attribute has the specified information (name and possibly a value)
-attrHasValue :: String -> Maybe String -> Attribute -> Bool
-attrHasValue nom mval attr =
+attrHasValue :: String -> Attribute -> Bool
+attrHasValue val attr =
   case attr of
-    SimpleAttribute { name = n } -> nom == n
-    ComplexAttribute { name = n, value = v } ->
-      case mval of
-        Nothing -> nom == n
-        Just val -> nom == n && val == v
-    NoAttribute -> False
+    SimpleAttribute { name = n } -> n == val
+    ComplexAttribute { value = v } -> v == val
 
 -- Part of encoding the Attributes
 oneField :: Attribute -> Value
@@ -491,7 +489,10 @@ addSimpleAttribute f s = f { attributes = attributes f ++ [mkSimpleAttribute s] 
 
 -- Determine if a field has an attribute with the specified values
 fieldHasAttr :: String -> Maybe String -> Field -> Bool
-fieldHasAttr nom mval f = isJust (find (attrHasValue nom mval) (attributes f))
+fieldHasAttr nom mval f =
+  case mval of
+    Nothing -> pangalan f == nom
+    Just val -> isJust (find (attrHasValue val) (attributes f))
 
 -- Parse a simple Field. A field is <usually> on one line.
 simpleField :: GenParser Char st Field

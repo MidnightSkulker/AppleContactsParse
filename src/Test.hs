@@ -8,7 +8,6 @@ import Data.Aeson as Aeson (object, (.=), encode, Value(..), KeyValue(..))
 import Data.Text as T (pack)
 import Data.Either ()
 import Data.Either.Utils (fromRight)
-import Data.Maybe
 import Parse
 
 -- Run the address book parse on a test input
@@ -35,7 +34,7 @@ t3 = jsonTest (vcf []) "BEGIN:VCARD\nORG:Kasalukuyang Estudyante\nEND:VCARD\nBEG
 aa :: Attribute
 aa = ComplexAttribute "a" "1"
 ahv :: Bool
-ahv = attrHasValue "a" Nothing aa
+ahv = attrHasValue "a" aa
 ao :: Value
 ao = object [T.pack "a" .= (1 :: Integer)]
 ba :: Attribute
@@ -76,6 +75,8 @@ f7v :: Value
 f7v = toJSON f7
 f7e :: ByteString
 f7e = encode f7v
+f8 :: Field
+f8 = parsTest (field []) "ORG:Kasalukuyang"
 abo :: Value
 abo = object [T.pack "a" .= (1 :: Integer), T.pack "b" .= (2 :: Integer)]
 abv2 :: Value
@@ -88,3 +89,5 @@ attrs2 = mkObjectFromPairable attributeToPair [aa, ba, ca]
 
 card1 :: Card
 card1 = parsTest (card []) "BEGIN:VCARD\nORG:Macys;\na:1;type=x\nEND:VCARD\n"
+card2 :: Card
+card2 = parsTest (card []) "BEGIN:VCARD\nORG:Kasalukuyang Estudyante;\na:1;type=x\nEND:VCARD\n"
