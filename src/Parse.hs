@@ -610,5 +610,7 @@ vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
      ; trace "Hello from vcf" eof
-     ; return VCF { cards = nubBy sameFN es }
+     ; return
+         VCF { cards = filter (cardHasAttr "ORG" (Just "Kasalukuyang Estudyante"))
+                              (nubBy sameFN es) }
      }
