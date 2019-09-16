@@ -1,3 +1,4 @@
 #!/bin/bash
 set -v
 AppleContactsParse --vcf=outputs/all.vcf --json=outputs/all.json --NoPhoto --NoProdID --NoABUID --NoN --NoAdr --StudentsOnly
+cp outputs/all.json outputs/students.json
