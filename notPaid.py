@@ -28,29 +28,29 @@ def findStudentInJSON(student, students):
 with open("outputs/test.json", "w") as write_file:
     json.dump(students, write_file, indent=4)
 
-outStudents = json.dumps(students, indent=4)
+# for s in students:
+#   print(s['fields']['FN'])
 
-for s in students:
-    print(s['fields']['FN'])
-f1 = findStudentInJSON('Madhesh', students)
-print('f1', f1)
-f2 = findStudentInJSON('Sri Gowri', students)
-print('f2', f2)
-f3 = findStudentInJSON('Advaita', students)
-print('f3', f3)
-
-print('------------------------------------------------------------')
+# f1 = findStudentInJSON('Madhesh', students)
+# print('f1', f1)
+# f2 = findStudentInJSON('Sri Gowri', students)
+# print('f2', f2)
+# f3 = findStudentInJSON('Advaita', students)
+# print('f3', f3)
 
 # Read in the non paying students, and find their JSON record
 for nonPayer in nonPayersFile:
     jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
-    print('nonPayer', nonPayer.rstrip(), jsonStudent)
     if jsonStudent:
-        fn = jsonStudent['fields']['FN']
-        email = jsonStudent['fields']['EMAIL1']
-        print(fn, email)
+        fields = jsonStudent['fields']
+        if 'EMAIL1' in fields:
+            fn = jsonStudent['fields']['FN']
+            email = jsonStudent['fields']['EMAIL1']
+            print(fn, email)
+        else:
+            print('No Email: ', nonPayer.rstrip())
     else:        
-        print(nonPayer.rstrip())
+        print('No student record: ', nonPayer.rstrip())
 
 # Clean up open files
 nonPayersFile.close()
