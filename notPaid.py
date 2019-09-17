@@ -11,20 +11,46 @@ argumentParser.add_argument('--students', help='List of students who have not pa
 # Now parse the arguments passed in
 parsedArguments = argumentParser.parse_args()
 nonPayersFile = open(parsedArguments.students)
-# Read the check register of hand written checks
-for student in nonPayersFile:
-    print(student.rstrip())
 
 # Read the .json file with the students
-with open("outputs/all.json", "r") as read_file:
+with open("outputs/students.json", "r") as read_file:
     students = json.load(read_file)
 
 # print(students)
+def findStudentInJSON(student, students):
+    for s in students:
+        if re.match(student, s['fields']['FN']):
+            return s
+        else:
+            continue
+    return None
 
 with open("outputs/test.json", "w") as write_file:
     json.dump(students, write_file, indent=4)
 
 outStudents = json.dumps(students, indent=4)
+
+for s in students:
+    print(s['fields']['FN'])
+f1 = findStudentInJSON('Madhesh', students)
+print('f1', f1)
+f2 = findStudentInJSON('Sri Gowri', students)
+print('f2', f2)
+f3 = findStudentInJSON('Advaita', students)
+print('f3', f3)
+
+print('------------------------------------------------------------')
+
+# Read in the non paying students, and find their JSON record
+for nonPayer in nonPayersFile:
+    jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
+    print('nonPayer', nonPayer.rstrip(), jsonStudent)
+    if jsonStudent:
+        fn = jsonStudent['fields']['FN']
+        email = jsonStudent['fields']['EMAIL1']
+        print(fn, email)
+    else:        
+        print(nonPayer.rstrip())
 
 # Clean up open files
 nonPayersFile.close()
