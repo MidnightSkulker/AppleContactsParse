@@ -1,3 +1,2 @@
 #!/bin/bash
-set -v
 notPaid.py --students=outputs/notPaid
