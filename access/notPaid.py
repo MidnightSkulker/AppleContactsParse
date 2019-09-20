@@ -13,7 +13,7 @@ parsedArguments = argumentParser.parse_args()
 nonPayersFile = open(parsedArguments.students)
 
 # Read the .json file with the students
-with open('outputs/students.json', 'r') as read_file:
+with open("../outputs/students.json", "r") as read_file:
     students = json.load(read_file)
 
 # print(students)
@@ -39,8 +39,8 @@ def findStudentInJSON(student, students):
 # print('f3', f3)
 
 # Read in the non paying students, and find their JSON record
-with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
-     open('outputs/notPaid.emails', 'w') as studentEmail:
+with open('../outputs/notPaid.studentInfo', 'w') as studentInfo,\
+     open('../outputs/notPaid.emails', 'w') as studentEmail:
     for nonPayer in nonPayersFile:
         jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
         if jsonStudent:
