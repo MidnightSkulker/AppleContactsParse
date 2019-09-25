@@ -6,17 +6,21 @@ import json
 
 argumentParser = argparse.ArgumentParser(description='Not Paid Students')
 # List of students who have not paid.
-argumentParser.add_argument('--students', help='List of students who have not paid')
+argumentParser.add_argument('--nonPayers', help='List of students who have not paid')
+argumentParser.add_argument('--notPaid', help='print out list of students who have not paid, with email addresses', action='store_true')
+argumentParser.add_argument('--immunization', help='print out list of students who have no immunization, with email addresses', action='store_true')
 
 # Now parse the arguments passed in
 parsedArguments = argumentParser.parse_args()
-nonPayersFile = open(parsedArguments.students)
+# print('parsedArguments.nonPayers', parsedArguments.nonPayers)
+# print('parsedArguments.notPaid', parsedArguments.notPaid)
+# print('parsedArguments.immunization', parsedArguments.immunization)
 
 # Read the .json file with the students
-with open('outputs/students.json', 'r') as read_file:
+with open("outputs/students.json", "r") as read_file:
     students = json.load(read_file)
 
-# print(students)
+# Find information about a student from the list of students in the JSON file.
 def findStudentInJSON(student, students):
     for s in students:
         if re.match(student, s['fields']['FN']):
@@ -25,35 +29,30 @@ def findStudentInJSON(student, students):
             continue
     return None
 
-# with open("outputs/test.json", "w") as write_file:
-#    json.dump(students, write_file, indent=4)
+# Print out information about those who have not paid
+def notPaid(nonPayers:str):
+    nonPayersFile = open(nonPayers)
 
-# for s in students:
-#   print(s['fields']['FN'])
+    # Read in the non paying students, and find their JSON record
+    with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
+         open('outputs/notPaid.emails', 'w') as studentEmail:
+        for nonPayer in nonPayersFile:
+            jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
+            if jsonStudent:
+                fields = jsonStudent['fields']
+                if 'EMAIL1' in fields:
+                    fn = jsonStudent['fields']['FN']
+                    email = jsonStudent['fields']['EMAIL1']
+                    studentInfo.write(fn + ' ' + email + '\n')
+                    studentEmail.write(email + '\n')
+                else:
+                    studentInfo.write('No Email: ' + nonPayer.rstrip() + '\n')
+            else:        
+                studentInfo.write('No student record: ' + nonPayer.rstrip() + '\n')
 
-# f1 = findStudentInJSON('Madhesh', students)
-# print('f1', f1)
-# f2 = findStudentInJSON('Sri Gowri', students)
-# print('f2', f2)
-# f3 = findStudentInJSON('Advaita', students)
-# print('f3', f3)
+    # Clean up open files
+    nonPayersFile.close()
 
-# Read in the non paying students, and find their JSON record
-with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
-     open('outputs/notPaid.emails', 'w') as studentEmail:
-    for nonPayer in nonPayersFile:
-        jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
-        if jsonStudent:
-            fields = jsonStudent['fields']
-            if 'EMAIL1' in fields:
-                fn = jsonStudent['fields']['FN']
-                email = jsonStudent['fields']['EMAIL1']
-                studentInfo.write(fn + ' ' + email + '\n')
-                studentEmail.write(email + '\n')
-            else:
-                studentInfo.write('No Email: ' + nonPayer.rstrip() + '\n')
-        else:        
-            studentInfo.write('No student record: ' + nonPayer.rstrip() + '\n')
+# Performm the requested tasks.
+if parsedArguments.notPaid: notPaid(parsedArguments.nonPayers)
 
-# Clean up open files
-nonPayersFile.close()
