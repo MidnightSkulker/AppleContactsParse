@@ -30,7 +30,6 @@ def findStudentInJSON(student, students):
 # Print out information about those who have not paid
 def notPaid(nonPayers:str):
     nonPayersFile = open(nonPayers)
-
     # Read in the non paying students, and find their JSON record
     with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
          open('outputs/notPaid.emails', 'w') as studentEmail:
@@ -53,4 +52,4 @@ def notPaid(nonPayers:str):
 
 # Performm the requested tasks.
 if parsedArguments.nonPayers is not None: notPaid(parsedArguments.nonPayers)
-
+if parsedArguments.immunization: print('Immunization!')
