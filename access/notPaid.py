@@ -7,13 +7,11 @@ import json
 argumentParser = argparse.ArgumentParser(description='Not Paid Students')
 # List of students who have not paid.
 argumentParser.add_argument('--nonPayers', help='List of students who have not paid')
-argumentParser.add_argument('--notPaid', help='print out list of students who have not paid, with email addresses', action='store_true')
 argumentParser.add_argument('--immunization', help='print out list of students who have no immunization, with email addresses', action='store_true')
 
 # Now parse the arguments passed in
 parsedArguments = argumentParser.parse_args()
 # print('parsedArguments.nonPayers', parsedArguments.nonPayers)
-# print('parsedArguments.notPaid', parsedArguments.notPaid)
 # print('parsedArguments.immunization', parsedArguments.immunization)
 
 # Read the .json file with the students
@@ -54,5 +52,5 @@ def notPaid(nonPayers:str):
     nonPayersFile.close()
 
 # Performm the requested tasks.
-if parsedArguments.notPaid: notPaid(parsedArguments.nonPayers)
+if parsedArguments.nonPayers is not None: notPaid(parsedArguments.nonPayers)
 
