@@ -50,6 +50,24 @@ def notPaid(nonPayers:str):
     # Clean up open files
     nonPayersFile.close()
 
+# Process the immunization records
+def immunization():
+    with open('outputs/Immunization.StudentInfo', 'w') as studentInfo:
+        for s in students:
+            fields = s['fields']
+            fn = fields['FN']
+            if 'Immunization' in fields:
+                if re.match('No', s['fields']['Immunization']):
+                    if 'EMAIL1' in fields:
+                        email = fields['EMAIL1']
+                    else:
+                        email = 'NO EMAIL'
+                    studentInfo.write(fn +' ' + email + '\n')
+                else:
+                    continue
+            else:
+                print('No Immunization field for', fn)
+
 # Performm the requested tasks.
 if parsedArguments.nonPayers is not None: notPaid(parsedArguments.nonPayers)
-if parsedArguments.immunization: print('Immunization!')
+if parsedArguments.immunization: immunization()

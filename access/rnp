@@ -1,3 +1,6 @@
 #!/bin/bash
-access/notPaid.py --nonPayers=outputs/notPaid
+access/notPaid.py --nonPayers=outputs/notPaid --immunization
+echo "-----------------------Non Payers --------------------------------------------"
 cat outputs/notPaid.emails
+echo "---------------------- Immunization ------------------------------------------"
+cat outputs/Immunization.StudentInfo
