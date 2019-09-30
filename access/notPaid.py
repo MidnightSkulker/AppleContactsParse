@@ -3,11 +3,14 @@ import sys
 import re
 import argparse
 import json
+from datetime import date
+import Graduates
 
 argumentParser = argparse.ArgumentParser(description='Not Paid Students')
 # List of students who have not paid.
-argumentParser.add_argument('--nonPayers', help='List of students who have not paid')
-argumentParser.add_argument('--immunization', help='print out list of students who have no immunization, with email addresses', action='store_true')
+argumentParser.add_argument('--NonPayers', help='List of students who have not paid')
+argumentParser.add_argument('--Graduates', help='List of students who have not paid')
+argumentParser.add_argument('--Immunization', help='print out list of students who have no immunization, with email addresses', action='store_true')
 
 # Now parse the arguments passed in
 parsedArguments = argumentParser.parse_args()
@@ -62,12 +65,14 @@ def immunization():
                         email = fields['EMAIL1']
                     else:
                         email = 'NO EMAIL'
-                    studentInfo.write(fn +' ' + email + '\n')
+                    studentInfo.write(fn + ' ' + email + '\n')
                 else:
                     continue
             else:
                 print('No Immunization field for', fn)
 
+
 # Performm the requested tasks.
-if parsedArguments.nonPayers is not None: notPaid(parsedArguments.nonPayers)
-if parsedArguments.immunization: immunization()
+if parsedArguments.NonPayers is not None: notPaid(parsedArguments.NonPayers)
+if parsedArguments.Immunization: immunization()
+if parsedArguments.Graduates: Graduates.graduates('2020')
