@@ -34,7 +34,7 @@ def mdyToDate(d:str):
 
 def graduates(currentYear:str, studentBirthDate: str):
     cutOffDate = '09/01/'
-    olderThan = mdyToDate(cutOffDate + str(int(currentYear) - 5))
-    youngerThan = mdyToDate(cutOffDate + str(int(currentYear) - 4))
+    youngerThan = mdyToDate(cutOffDate + str(int(currentYear) - 5))
+    olderThan = mdyToDate(cutOffDate + str(int(currentYear) - 6))
     birthDate = mdyToDate(studentBirthDate)
     return ((olderThan <= birthDate) and (birthDate <= youngerThan))
