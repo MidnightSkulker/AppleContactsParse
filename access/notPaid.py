@@ -31,7 +31,7 @@ def findStudentInJSON(student, students):
     return None
 
 # Print out information about those who have not paid
-def notPaid(nonPayers:str):
+def notPaid(nonPayers:str, students:dict):
     nonPayersFile = open(nonPayers)
     # Read in the non paying students, and find their JSON record
     with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
@@ -54,7 +54,7 @@ def notPaid(nonPayers:str):
     nonPayersFile.close()
 
 # Process the immunization records
-def immunization():
+def immunization(students):
     with open('outputs/Immunization.StudentInfo', 'w') as studentInfo:
         for s in students:
             fields = s['fields']
@@ -71,8 +71,21 @@ def immunization():
             else:
                 print('No Immunization field for', fn)
 
+def graduates(graduationYear:str, students:dict):
+    print ('----- graduationYear', graduationYear)
+    with open('outputs/Graduation.StudentInfo', 'w') as studentInfo:
+        for s in students:
+            fields = s['fields']
+            fn = fields['FN']
+            if 'Birthday' in fields:
+                studentBirthday = fields['Birthday']
+                if Graduates.isGraduating(graduationYear, studentBirthday):
+                    studentInfo.write(fn + ' ' + studentBirthday + '\n')
+                else:
+                    continute
+            print('No Birthday for', fn)
 
 # Performm the requested tasks.
-if parsedArguments.NonPayers is not None: notPaid(parsedArguments.NonPayers)
-if parsedArguments.Immunization: immunization()
-if parsedArguments.Graduates: Graduates.graduates('2020')
+if parsedArguments.NonPayers is not None: notPaid(parsedArguments.NonPayers, students)
+if parsedArguments.Immunization: immunization(students)
+if parsedArguments.Graduates: graduates(parsedArguments.Graduates, students)

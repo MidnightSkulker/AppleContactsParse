@@ -12,7 +12,9 @@ def mmddyyyyToDate(d:str):
 
 def isGraduating(currentYear:str, studentBirthDate:str):
     olderThan = mmddyyyyToDate('09/01/' + str(int(currentYear) - 5))
+    print('olderThan', olderThan)
     youngerThan = mmddyyyyToDate('09/01/' + str(int(currentYear) - 4))
+    print('youngerThan', youngerThan)
     birthDate = mmddyyyyToDate(studentBirthDate)
     return ((olderThan <= birthDate) and (birthDate <= youngerThan))
 
