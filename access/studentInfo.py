@@ -11,6 +11,7 @@ argumentParser = argparse.ArgumentParser(description='Not Paid Students')
 argumentParser.add_argument('--NonPayers', help='List of students who have not paid')
 argumentParser.add_argument('--Graduates', help='List of students who have not paid')
 argumentParser.add_argument('--Immunization', help='print out list of students who have no immunization, with email addresses', action='store_true')
+argumentParser.add_argument('--Emails', help='print out list of students full names and email addresses', action='store_true')
 
 # Now parse the arguments passed in
 parsedArguments = argumentParser.parse_args()
@@ -72,8 +73,7 @@ def immunization(students):
                 print('No Immunization field for', fn)
 
 def graduates(graduationYear:str, students:dict):
-    print ('----- graduationYear', graduationYear)
-    with open('outputs/Graduation.StudentInfo', 'w') as studentInfo:
+    with open('outputs/Graduates.StudentInfo', 'w') as studentInfo:
         for s in students:
             fields = s['fields']
             fn = fields['FN']
@@ -87,7 +87,23 @@ def graduates(graduationYear:str, students:dict):
             else:
                 print('No Birthday for', fn)
 
+def emails(students:dict):
+    print('----- Emails')
+    with open('outputs/Emails.StudentInfo', 'w') as studentInfo,\
+         open('outputs/Emails', 'w') as studentEmail:
+        for s in students:
+            fields = s['fields']
+            fn = fields['FN']
+            if 'EMAIL1' in fields:
+                email = fields['EMAIL1']
+                studentInfo.write(fn + ' ' + email + '\n')
+                studentEmail.write(email + '\n')
+                print(fn, email)
+            else:
+                print('No Email for', fn)
+
 # Performm the requested tasks.
 if parsedArguments.NonPayers is not None: notPaid(parsedArguments.NonPayers, students)
 if parsedArguments.Immunization: immunization(students)
 if parsedArguments.Graduates: graduates(parsedArguments.Graduates, students)
+if parsedArguments.Emails: emails(students)
