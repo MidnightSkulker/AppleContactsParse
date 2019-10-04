@@ -1,5 +1,5 @@
 #!/bin/bash
-access/notPaid.py --NonPayers=outputs/notPaid --Immunization --Graduates=2020 --Emails
+access/studentInfo.py --NonPayers=outputs/notPaid --Immunization --Graduates=2020 --Emails
 echo "-----------------------Non Payers --------------------------------------------"
 cat outputs/notPaid.emails
 echo "---------------------- Immunization ------------------------------------------"
