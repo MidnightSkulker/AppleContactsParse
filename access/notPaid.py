@@ -81,9 +81,11 @@ def graduates(graduationYear:str, students:dict):
                 studentBirthday = fields['Birthday']
                 if Graduates.isGraduating(graduationYear, studentBirthday):
                     studentInfo.write(fn + ' ' + studentBirthday + '\n')
+                    print(fn, studentBirthday)
                 else:
-                    continute
-            print('No Birthday for', fn)
+                    continue
+            else:
+                print('No Birthday for', fn)
 
 # Performm the requested tasks.
 if parsedArguments.NonPayers is not None: notPaid(parsedArguments.NonPayers, students)
