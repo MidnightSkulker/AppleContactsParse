@@ -39,16 +39,17 @@ def notPaid(nonPayers:str, students:dict):
             with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
                  open('outputs/notPaid.emails', 'w') as studentEmail:
                 for nonPayer in nonPayersFile:
-                    jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
-                    if jsonStudent:
-                        fields = jsonStudent['fields']
+                    s = findStudentInJSON(nonPayer.rstrip(), students)
+                    if s:
+                        fields = s['fields']
                         if 'EMAIL1' in fields:
-                            fn = jsonStudent['fields']['FN']
-                            email = jsonStudent['fields']['EMAIL1']
+                            fn = s['fields']['FN']
+                            email = s['fields']['EMAIL1']
                             studentInfo.write(fn + ' ' + email + '\n')
                             studentEmail.write(email + '\n')
                         else:
                             studentInfo.write('No Email: ' + nonPayer.rstrip() + '\n')
+                            print('No Email', fn)
                     else:        
                         studentInfo.write('No student record: ' + nonPayer.rstrip() + '\n')
     except IOError as error:

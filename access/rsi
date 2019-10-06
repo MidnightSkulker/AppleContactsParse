@@ -1,0 +1,10 @@
+#!/bin/bash
+access/studentInfo.py --NonPayers=outputs/notPaid --Immunization --Graduates=2020 --Emails
+echo "-----------------------Non Payers --------------------------------------------"
+cat outputs/notPaid.emails
+# echo "---------------------- Immunization ------------------------------------------"
+# cat outputs/Immunization.StudentInfo
+# echo "---------------------- Graduates ---------------------------------------------"
+# cat outputs/Graduates.StudentInfo
+# echo "---------------------- Emails ---------------------------------------------"
+# cat outputs/Emails.StudentInfo
