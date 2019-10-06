@@ -10,12 +10,6 @@ def mmddyyyyToDate(d:str):
     else:
         return None
 
-def isGraduating(currentYear:str, birthDate:str):
-    olderThan = str(int(currentYear) - 5) + '-09-01'
-    youngerThan = str(int(currentYear) - 4) + '-09-01'
-    # print('olderThan', olderThan, 'youngerThan', youngerThan, 'birthDate', birthDate)
-    return ((olderThan <= birthDate) and (birthDate <= youngerThan))
-
 # class DateExtended(date):
 #     def __new__(self, childDate:str):
 #         # FOR THIS CLASS ONLY

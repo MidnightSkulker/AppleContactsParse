@@ -33,26 +33,27 @@ def findStudentInJSON(student, students):
 
 # Print out information about those who have not paid
 def notPaid(nonPayers:str, students:dict):
-    nonPayersFile = open(nonPayers)
     # Read in the non paying students, and find their JSON record
-    with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
-         open('outputs/notPaid.emails', 'w') as studentEmail:
-        for nonPayer in nonPayersFile:
-            jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
-            if jsonStudent:
-                fields = jsonStudent['fields']
-                if 'EMAIL1' in fields:
-                    fn = jsonStudent['fields']['FN']
-                    email = jsonStudent['fields']['EMAIL1']
-                    studentInfo.write(fn + ' ' + email + '\n')
-                    studentEmail.write(email + '\n')
-                else:
-                    studentInfo.write('No Email: ' + nonPayer.rstrip() + '\n')
-            else:        
-                studentInfo.write('No student record: ' + nonPayer.rstrip() + '\n')
+    try:
+        with open(nonPayers, 'r') as nonPayersFile:
+            with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
+                 open('outputs/notPaid.emails', 'w') as studentEmail:
+                for nonPayer in nonPayersFile:
+                    jsonStudent = findStudentInJSON(nonPayer.rstrip(), students)
+                    if jsonStudent:
+                        fields = jsonStudent['fields']
+                        if 'EMAIL1' in fields:
+                            fn = jsonStudent['fields']['FN']
+                            email = jsonStudent['fields']['EMAIL1']
+                            studentInfo.write(fn + ' ' + email + '\n')
+                            studentEmail.write(email + '\n')
+                        else:
+                            studentInfo.write('No Email: ' + nonPayer.rstrip() + '\n')
+                    else:        
+                        studentInfo.write('No student record: ' + nonPayer.rstrip() + '\n')
+    except IOError as error:
+        print('Could not open file', nonPayers, error)
 
-    # Clean up open files
-    nonPayersFile.close()
 
 # Process the immunization records
 def immunization(students):
@@ -72,6 +73,13 @@ def immunization(students):
             else:
                 print('No Immunization field for', fn)
 
+# Determine if a student is graduating for a given year
+def isGraduating(currentYear:str, birthDate:str):
+    olderThan = str(int(currentYear) - 5) + '-09-01'
+    youngerThan = str(int(currentYear) - 4) + '-09-01'
+    return ((olderThan <= birthDate) and (birthDate <= youngerThan))
+
+# Find Student information for the graduates of a specified year
 def graduates(graduationYear:str, students:dict):
     with open('outputs/Graduates.StudentInfo', 'w') as studentInfo:
         for s in students:
@@ -79,16 +87,15 @@ def graduates(graduationYear:str, students:dict):
             fn = fields['FN']
             if 'Birthday' in fields:
                 studentBirthday = fields['Birthday']
-                if Graduates.isGraduating(graduationYear, studentBirthday):
+                if isGraduating(graduationYear, studentBirthday):
                     studentInfo.write(fn + ' ' + studentBirthday + '\n')
-                    print(fn, studentBirthday)
                 else:
                     continue
             else:
                 print('No Birthday for', fn)
 
+# Find student information, focusing on the emails
 def emails(students:dict):
-    print('----- Emails')
     with open('outputs/Emails.StudentInfo', 'w') as studentInfo,\
          open('outputs/Emails', 'w') as studentEmail:
         for s in students:
@@ -98,7 +105,6 @@ def emails(students:dict):
                 email = fields['EMAIL1']
                 studentInfo.write(fn + ' ' + email + '\n')
                 studentEmail.write(email + '\n')
-                print(fn, email)
             else:
                 print('No Email for', fn)
 
