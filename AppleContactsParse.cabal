@@ -12,7 +12,6 @@ category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
-allow-newer:         true
                      
 executable AppleContactsParse
   hs-source-dirs:      src

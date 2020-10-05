@@ -1,8 +1,9 @@
 ARCHIVE
 outputs
-inputs/NotPaid
+inputs
 \#*
 .#*
+*.lock
 .stack-work
 tutorial-env
 test.out

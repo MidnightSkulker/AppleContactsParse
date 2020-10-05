@@ -1,10 +1,13 @@
 #!/bin/bash
-access/studentInfo.py --NonPayers=outputs/notPaid --Immunization --Graduates=2020 --Emails
-echo "-----------------------Non Payers --------------------------------------------"
-cat outputs/notPaid.emails
-# echo "---------------------- Immunization ------------------------------------------"
-# cat outputs/Immunization.StudentInfo
-# echo "---------------------- Graduates ---------------------------------------------"
-# cat outputs/Graduates.StudentInfo
-# echo "---------------------- Emails ---------------------------------------------"
+access/studentInfo.py --List=$1 --Immunization --Graduates=2020 --Emails
+# echo "-----------------------Sought --------------------------------------------"
+# cat outputs/$1.emails
+echo "---------------------- Immunization ------------------------------------------"
+cat outputs/Immunization.StudentInfo
+echo "---------------------- Graduates ---------------------------------------------"
+cat outputs/Graduates.StudentInfo
+echo "---------------------- Emails ---------------------------------------------"
+echo "Split the Emails into groups small enough to send to"
+cd outputs; split -a 1 -l 40 Emails Emails; cd ..
+wc outputs/Emails*
 # cat outputs/Emails.StudentInfo

@@ -6,17 +6,15 @@ import json
 from datetime import date
 import Graduates
 
-argumentParser = argparse.ArgumentParser(description='Not Paid Students')
+argumentParser = argparse.ArgumentParser(description='Student Information from Apple Contacts JSON file')
 # List of students who have not paid.
-argumentParser.add_argument('--NonPayers', help='List of students who have not paid')
-argumentParser.add_argument('--Graduates', help='List of students who have not paid')
+argumentParser.add_argument('--List', help='List of students who have not paid')
+argumentParser.add_argument('--Graduates', help='Report on who is Graduating for the specified year')
 argumentParser.add_argument('--Immunization', help='print out list of students who have no immunization, with email addresses', action='store_true')
 argumentParser.add_argument('--Emails', help='print out list of students full names and email addresses', action='store_true')
 
 # Now parse the arguments passed in
 parsedArguments = argumentParser.parse_args()
-# print('parsedArguments.nonPayers', parsedArguments.nonPayers)
-# print('parsedArguments.immunization', parsedArguments.immunization)
 
 # Read the .json file with the students
 with open("outputs/students.json", "r") as read_file:
@@ -31,15 +29,17 @@ def findStudentInJSON(student, students):
             continue
     return None
 
-# Print out information about those who have not paid
-def notPaid(nonPayers:str, students:dict):
-    # Read in the non paying students, and find their JSON record
+# Print out information about the specified list of students
+def getList(sought:str, students:dict):
+    print('sought', sought)
+    # Read in the sought after students, and find their JSON record
     try:
-        with open(nonPayers, 'r') as nonPayersFile:
-            with open('outputs/notPaid.studentInfo', 'w') as studentInfo,\
-                 open('outputs/notPaid.emails', 'w') as studentEmail:
-                for nonPayer in nonPayersFile:
-                    s = findStudentInJSON(nonPayer.rstrip(), students)
+        with open('inputs/' + sought, 'r') as soughtFile:
+            with open('outputs/' + sought + '.StudentInfo', 'w') as studentInfo,\
+                 open('outputs/' + sought + '.Emails', 'w') as studentEmail:
+                for current in soughtFile:
+                    print('current', current.rstrip())
+                    s = findStudentInJSON(current.rstrip(), students)
                     if s:
                         fields = s['fields']
                         if 'EMAIL1' in fields:
@@ -48,12 +48,12 @@ def notPaid(nonPayers:str, students:dict):
                             studentInfo.write(fn + ' ' + email + '\n')
                             studentEmail.write(email + '\n')
                         else:
-                            studentInfo.write('No Email: ' + nonPayer.rstrip() + '\n')
+                            studentInfo.write('No Email: ' + current.rstrip() + '\n')
                             print('No Email', fn)
                     else:        
-                        studentInfo.write('No student record: ' + nonPayer.rstrip() + '\n')
+                        studentInfo.write('No student record: ' + current.rstrip() + '\n')
     except IOError as error:
-        print('Could not open file', nonPayers, error)
+        print('Could not open file', sought, error)
 
 
 # Process the immunization records
@@ -76,8 +76,8 @@ def immunization(students):
 
 # Determine if a student is graduating for a given year
 def isGraduating(currentYear:str, birthDate:str):
-    olderThan = str(int(currentYear) - 5) + '-09-01'
-    youngerThan = str(int(currentYear) - 4) + '-09-01'
+    olderThan = str(int(currentYear) - 6) + '-09-01'
+    youngerThan = str(int(currentYear) - 5) + '-09-01'
     return ((olderThan <= birthDate) and (birthDate <= youngerThan))
 
 # Find Student information for the graduates of a specified year
@@ -110,7 +110,7 @@ def emails(students:dict):
                 print('No Email for', fn)
 
 # Performm the requested tasks.
-if parsedArguments.NonPayers is not None: notPaid(parsedArguments.NonPayers, students)
+if parsedArguments.List is not None: getList(parsedArguments.List, students)
 if parsedArguments.Immunization: immunization(students)
 if parsedArguments.Graduates: graduates(parsedArguments.Graduates, students)
 if parsedArguments.Emails: emails(students)
