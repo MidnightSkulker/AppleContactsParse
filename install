@@ -1,3 +1,4 @@
 #!/bin/bash
 cp AppleContactsParse ~/bin
 cp mkVcf ~/bin
+cp rall ~/bin
