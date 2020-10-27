@@ -1,5 +1,3 @@
 #!/bin/bash
 set -v
 osascript backupAddressBook.scpt
-mv all.vcf outputs
-ls -l outputs/all.vcf

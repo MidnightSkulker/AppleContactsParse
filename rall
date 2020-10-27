@@ -1,4 +1,7 @@
 #!/bin/bash
 set -v
-AppleContactsParse --vcf=outputs/all.vcf --json=outputs/all.json --NoPhoto --NoProdID --NoABUID --NoN --NoAdr --StudentsOnly
+mkVcf
+mv all.vcf outputs/all.vcf
+ls -l outputs/all.vcf
+AppleContactsParse --vcf=outputs/all.vcf --json=outputs/all.json --NoPhoto --NoProdID --NoABUID --NoN --NoAdr --StudentsOnly="Online Student"
 cp outputs/all.json outputs/students.json

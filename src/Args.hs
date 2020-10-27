@@ -1,12 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 -- Parsing the arguments to the program
 module Args where
 
 import System.IO (Handle, IOMode(..), stdin, stdout)
 import Options.Applicative
 import Data.Semigroup ((<>))
-import Data.List (partition, find)
-import Data.Maybe (isJust)
+import Data.List (partition, find, isPrefixOf)
 import Files (safeOpenFile)
 
 -- Flags that can be set
@@ -17,8 +16,11 @@ type FieldNames = [String]
 defaultFlags :: Flags
 defaultFlags = Flags { noPhotos = False }
 -- Determine if we should get Students only
-getStudentsOnly :: FieldNames -> Bool
-getStudentsOnly fns = isJust (find (== "StudentsOnly") fns)
+getStudentsOnly :: FieldNames -> Maybe String
+getStudentsOnly fns =
+  case find (isPrefixOf "StudentsOnly-") fns of
+    Nothing -> Nothing
+    Just s -> Just (drop (length ("StudentsOnly-" :: String)) s)
 
 -- Set the appropriate flag according to the argument
 flagSetter :: Flags -> Arg -> Flags
@@ -35,7 +37,7 @@ flagField (NoProdID _) = "PRODID"
 flagField (NoABUID _) = "X-ABUID"
 flagField (NoAdr _) = "ADR"
 flagField (NoN _) = "N"
-flagField (StudentsOnly _) = "StudentsOnly"
+flagField (StudentsOnly s) = "StudentsOnly-" ++ s
 flagField _ = "None***"
 flagFields :: [Arg] -> FieldNames
 flagFields = map flagField
@@ -49,7 +51,8 @@ nArgs Args { fileArgs = fs, switchArgs = ss } = length fs + length ss
 -- FIX ME: Looks like these Bool arguments are redundant.
 data Arg = VCF String | JSON String
          | Positional String | NoPhoto Bool | NoProdID Bool | NoABUID Bool
-         | NoN Bool | NoAdr Bool | StudentsOnly Bool
+         | NoN Bool | NoAdr Bool
+         | StudentsOnly String -- The string to identify students
            deriving (Show)
 
 -- Get the underlying string out of an argument
@@ -62,7 +65,7 @@ argString (NoProdID _) = "No ProdID"
 argString (NoABUID _) = "No ABUID"
 argString (NoAdr _) = "No Adr"
 argString (NoN _) = "No N"
-argString (StudentsOnly _) = ""
+argString (StudentsOnly s) = s
 
 -- Determine if the argument is for a VCF file
 isVCF :: Arg -> Bool
@@ -122,7 +125,7 @@ noN = NoN <$> flag' False (long "NoN")
 
 -- Parameter to output only student records in the JSON file
 studentsOnly :: Parser Arg
-studentsOnly = StudentsOnly <$> flag' False (long "StudentsOnly")
+studentsOnly = StudentsOnly <$> strOption (long "StudentsOnly" <> metavar "STRING" <> help "String that identifies a student")
 
 -- Any of the paremeter options
 anyArg :: Parser Arg

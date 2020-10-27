@@ -369,31 +369,31 @@ combineItems fldNames fs =
       -- Note that the two members of the item group may come in either order.
       itemGroups :: [[Field]]
       itemGroups = groupBy sameItemNumber (sortOn pangalan items)
-      
+
       -- Filter out the item groups that have a name with "IMPP" in it.
       itemGroupsFiltered :: [[Field]]
       itemGroupsFiltered = filter isNotIMPPItemGroup itemGroups
-      
+
       -- Compute the information needed from each itemGroup
       fieldItems :: [FieldItem]
       fieldItems = map mkFieldItemFromList itemGroupsFiltered
-                       
+
       -- Convert the birthday items from "03/23/2016" format into
       -- "2016-03-26" format, so that dates can be compared by
       -- unix commands such as jq
       birthdayItems :: [FieldItem]
       birthdayItems = map comparableBirthday fieldItems
-      
+
       -- Turn the field items into single fields
       combinedFields :: [Field]
       combinedFields = map mkItemField birthdayItems
-      
+
       -- If there is more than one telephone number or Email address,
       -- further group these item groups into a single item that lists
       -- all the Email addresses or telephone numbers.
       fieldItemGroups :: [[FieldItem]]
       fieldItemGroups = groupBy sameFieldItemType (sortOn getFieldItemType fieldItems)
-      
+
       -- Choose one from each group to make representative Field.
       singleFields :: [Field]
       singleFields = map mkSingleFieldItem fieldItemGroups
@@ -571,9 +571,9 @@ cardHasAttr :: String -> Maybe String -> Card -> Bool
 cardHasAttr nom mval c = isJust (find (fieldHasAttr nom mval) (fieldz c))
 
 -- Determine if the card is for a current student.
--- This is indicated by an ORG field with the value "Kasalukuyang Estudyante"
-isCurrentStudent :: Card -> Bool
-isCurrentStudent = cardHasAttr "ORG" (Just "Kasalukuyang Estudyante")
+-- This is indicated by an ORG field with the value specified in the String parameter
+isCurrentStudent :: String -> Card -> Bool
+isCurrentStudent s = cardHasAttr "ORG" (Just s)
 
 -- Test if two cards have the same full name (FN)
 sameFN :: Card -> Card -> Bool
@@ -610,9 +610,10 @@ instance ToJSON VCF where
 vcf :: FieldNames -> GenParser Char st VCF
 vcf fns =
   do { es <- card fns `sepEndBy` eol
-     ; let cardz =
-             if getStudentsOnly fns
-             then filter isCurrentStudent (nubBy sameFN es)
-             else nubBy sameFN es
+     ; let mStudentsOnly = getStudentsOnly fns
+           cardz =
+             case mStudentsOnly of
+               Nothing -> nubBy sameFN es
+               Just s -> filter (isCurrentStudent s) (nubBy sameFN es)
      ; return VCF { cards = cardz }
      }

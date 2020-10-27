@@ -10,9 +10,9 @@ import Args (Files(..), commandArgAnalysis, commandLineOptions, Command(..))
 
 main :: IO ()
 main = do { parsedOptions <- execParser commandLineOptions
-          -- ; putStrLn $ "Parsed Options: " ++ show parsedOptions
+          ; putStrLn $ "Parsed Options: " ++ show parsedOptions
           ; analyzedOptions <- commandArgAnalysis parsedOptions
-          -- ; putStrLn $ "Analyzed Options: " ++ show analyzedOptions
+          ; putStrLn $ "Analyzed Options: " ++ show analyzedOptions
           ; case analyzedOptions of
               Left argError -> putStrLn (show argError)
               Right cmd ->
