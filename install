@@ -2,3 +2,4 @@
 cp AppleContactsParse ~/bin
 cp mkVcf ~/bin
 cp rall ~/bin
+cp backupAddressBook.scpt ~/bin
